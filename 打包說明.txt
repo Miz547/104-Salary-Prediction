@@ -1,0 +1,46 @@
+====================================
+AI 薪資預測模型研究系統 — 打包說明
+====================================
+
+【壓縮方式】
+將 "SPA Model" 資料夾壓縮為 ZIP，
+但排除以下項目（體積龐大且不需要）：
+
+  排除：.venv\
+  排除：__pycache__\
+  排除：data\（原始資料，可視需要附上）
+  排除：outputs\visualizations\（圖片，可視需要附上）
+
+【必須包含的檔案/資料夾】
+  ✅ public\                          前端所有頁面
+  ✅ outputs\trained_models\          已訓練模型（.joblib）
+  ✅ models\                          模型程式碼
+  ✅ utils\                           工具程式碼
+  ✅ salary_server.py                 主伺服器
+  ✅ config.py                        設定檔
+  ✅ requirements_server.txt          套件清單
+  ✅ 安裝並啟動.bat                   首次使用
+  ✅ 啟動.bat                         之後使用
+
+【Windows 快速排除壓縮指令（PowerShell）】
+在 "project005" 上層目錄執行：
+
+  Compress-Archive -Path "SPA Model\*" `
+    -DestinationPath "AI薪資預測系統.zip" `
+    -CompressionLevel Optimal
+
+  （之後手動從 ZIP 刪除 .venv 和 __pycache__ 資料夾）
+
+【對方收到後的使用步驟】
+  1. 解壓縮 ZIP
+  2. 雙擊「安裝並啟動.bat」
+  3. 等待套件安裝完成（首次約 3-10 分鐘）
+  4. 瀏覽器自動開啟 http://127.0.0.1:5001
+  5. 之後使用雙擊「啟動.bat」即可
+
+【對方電腦需求】
+  - Windows 10 / 11
+  - Python 3.10 以上（需加入 PATH）
+    下載：https://www.python.org/downloads/
+  - 網路連線（首次安裝套件用）
+  - 磁碟空間約 2GB（套件安裝後）
