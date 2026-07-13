@@ -1,0 +1,878 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資料清洗流程｜薪資預測研究</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+:root {
+  --accent: #1a56db;
+  --accent-strong: #1e40af;
+  --accent-light: #eff6ff;
+  --navy: #1e293b;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --ok: #0f766e;
+  --warn: #b45309;
+  --err: #b91c1c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; }
+
+/* Navbar */
+.navbar { background: var(--navy); padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+.navbar-brand span { color: #93c5fd; }
+.navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+.navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+.navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+
+/* Page header */
+.page-header { background: #fff; border-bottom: 1px solid var(--border); padding: 2rem clamp(1.5rem,5vw,4rem); }
+.page-header h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 800; color: var(--ink); margin-bottom: .4rem; }
+.page-header p { color: var(--muted); font-size: .95rem; }
+
+/* Main layout */
+.main { max-width: 1200px; margin: 0 auto; padding: 2rem clamp(1rem,3vw,2rem); display: grid; gap: 2rem; }
+
+/* Card */
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+.card-title { font-size: 1rem; font-weight: 800; color: var(--ink); margin-bottom: 1.2rem; padding-left: .8rem; border-left: 3px solid var(--accent); display: flex; align-items: center; gap: .6rem; }
+.card-title .badge { font-size: .75rem; font-weight: 700; background: var(--accent-light); color: var(--accent); border-radius: 4px; padding: 2px 8px; }
+
+/* JSON import area */
+.import-area { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.json-box { position: relative; }
+.json-box label { display: block; font-size: .82rem; font-weight: 700; color: var(--muted); margin-bottom: .5rem; }
+textarea.json-input { width: 100%; height: 220px; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: "Consolas","Courier New",monospace; font-size: 12px; line-height: 1.6; resize: vertical; background: #0f172a; color: #e2e8f0; outline: none; transition: border-color .15s; }
+textarea.json-input:focus { border-color: var(--accent); }
+.btn { padding: .6rem 1.4rem; border-radius: 5px; font-size: .9rem; font-weight: 700; border: none; cursor: pointer; transition: .15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-strong); }
+.btn-secondary { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+
+/* Pipeline steps */
+.pipeline { display: flex; align-items: center; gap: 0; margin: 1rem 0; overflow-x: auto; padding-bottom: .5rem; }
+.step { flex: 0 0 auto; background: #fff; border: 2px solid var(--border); border-radius: 8px; padding: .7rem 1rem; text-align: center; min-width: 110px; position: relative; transition: border-color .3s, background .3s; }
+.step.active { border-color: var(--accent); background: var(--accent-light); }
+.step.done { border-color: var(--ok); background: #f0fdf9; }
+.step-icon { font-size: 1.4rem; display: block; margin-bottom: .3rem; }
+.step-name { font-size: .78rem; font-weight: 700; color: var(--ink); }
+.step-count { font-size: .7rem; color: var(--muted); margin-top: .2rem; }
+.arrow { color: var(--border); font-size: 1.2rem; padding: 0 .3rem; flex: 0 0 auto; font-weight: 700; }
+.arrow.lit { color: var(--accent); }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.stat-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.2rem; text-align: center; transition: transform .2s; }
+.stat-box:hover { transform: translateY(-2px); }
+.stat-num { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+.stat-num.total  { color: var(--accent); }
+.stat-num.remove { color: var(--err); }
+.stat-num.clean  { color: var(--ok); }
+.stat-num.rate   { color: var(--warn); }
+.stat-lbl { font-size: .8rem; color: var(--muted); font-weight: 700; margin-top: .3rem; }
+
+/* Transform table */
+.transform-section { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; min-width: 340px; }
+th { background: var(--bg); color: var(--muted); font-size: .75rem; font-weight: 800; padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: .8rem; vertical-align: middle; line-height: 1.5; }
+tr:last-child td { border-bottom: none; }
+#rawTable td:nth-child(3), #rawTable td:nth-child(4),
+#cleanTable td:nth-child(3), #cleanTable td:nth-child(4) { font-variant-numeric: tabular-nums; text-align: right; font-size: .78rem; color: #1e40af; font-weight: 600; }
+#rawTable td:nth-child(5), #cleanTable td:nth-child(5) { font-size: .72rem; color: var(--muted); text-align: center; white-space: nowrap; }
+#rawTable th:nth-child(3), #rawTable th:nth-child(4),
+#cleanTable th:nth-child(3), #cleanTable th:nth-child(4) { text-align: right; }
+#rawTable th:nth-child(5), #cleanTable th:nth-child(5) { text-align: center; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 700; border-radius: 3px; padding: 1px 6px; margin: 1px; }
+.tag-raw  { background: #fef2f2; color: var(--err); border: 1px solid #fecaca; }
+.tag-clean { background: #f0fdf9; color: var(--ok); border: 1px solid #a7f3d0; }
+.tag-drop  { background: #fefce8; color: var(--warn); border: 1px solid #fde68a; }
+
+/* Row animation */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeGreen {
+  0%   { background: #d1fae5; }
+  100% { background: transparent; }
+}
+@keyframes fadeRed {
+  0%   { background: #fee2e2; }
+  100% { background: transparent; }
+}
+.row-enter { animation: slideIn .35s ease both; }
+.row-ok    { animation: fadeGreen 1.2s ease both; }
+.row-drop  { animation: fadeRed 1.2s ease both; }
+
+/* Charts grid */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.chart-box { height: 280px; }
+
+/* Log */
+.log-box { background: #0f172a; border-radius: 6px; padding: 1rem; height: 160px; overflow-y: auto; font-family: "Consolas","Courier New",monospace; font-size: 12px; line-height: 1.8; }
+.log-info  { color: #93c5fd; }
+.log-ok    { color: #6ee7b7; }
+.log-warn  { color: #fcd34d; }
+.log-err   { color: #fca5a5; }
+
+/* Progress bar */
+.progress-wrap { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin: .8rem 0; }
+.progress-bar  { height: 100%; background: var(--accent); border-radius: 4px; transition: width .6s ease; width: 0%; }
+
+/* Sample preset btn */
+.preset-chip { display: inline-block; padding: 4px 10px; background: var(--accent-light); color: var(--accent); border-radius: 20px; font-size: .78rem; font-weight: 700; cursor: pointer; border: 1px solid #bfdbfe; transition: .15s; }
+.preset-chip:hover { background: var(--accent); color: #fff; }
+
+/* Upload overlay */
+#uploadOverlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(15,23,42,.45); backdrop-filter:blur(3px); align-items:center; justify-content:center; }
+#uploadOverlay.show { display:flex; }
+.upload-card { background:#fff; border-radius:12px; padding:2rem 2.5rem; text-align:center; min-width:260px; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+.upload-spinner { width:48px; height:48px; border:4px solid var(--accent-light); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 1rem; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.upload-card p { font-size:.95rem; font-weight:600; color:var(--text); margin:0; }
+.upload-card .upload-sub { font-size:.82rem; color:var(--muted); margin-top:.3rem; }
+
+/* Upload toast */
+#uploadToast { position:fixed; bottom:2rem; right:2rem; z-index:300; display:flex; align-items:center; gap:.7rem; padding:.75rem 1.2rem; border-radius:8px; font-size:.88rem; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,.15); transform:translateY(20px); opacity:0; transition:transform .25s ease, opacity .25s ease; pointer-events:none; }
+#uploadToast.show { transform:translateY(0); opacity:1; }
+#uploadToast.ok { background:#ecfdf5; color:#065f46; border:1px solid #6ee7b7; }
+#uploadToast.err { background:#fef2f2; color:#7f1d1d; border:1px solid #fca5a5; }
+.toast-icon { font-size:1.1rem; }
+
+/* Upload progress bar inside overlay */
+.upload-progress-wrap { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin:.8rem 0 .3rem; width:180px; }
+.upload-progress-bar  { height:100%; background:var(--accent); border-radius:3px; width:0%; transition:width .2s ease; }
+
+@media (max-width: 900px) {
+  .navbar { flex-direction: column; align-items: flex-start; padding: .75rem 1rem; }
+  .import-area, .transform-section, .charts-grid, .stats-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+  <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html" class="active">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/salary_dashboard.html">三模型工作台</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html">薪資預測</a>
+        <a href="/salary-url.html">104 面議預測</a>
+        <a href="/faq.html">專案問答</a>
+    </nav>
+</header>
+
+<div class="page-header">
+  <h1>資料清洗流程視覺化</h1>
+  <p>將 104 人力銀行原始職缺 CSV 匯入，逐步展示欄位標準化、異常值移除、薪資區間過濾的完整清洗過程</p>
+</div>
+
+<!-- Upload overlay -->
+<div id="uploadOverlay">
+  <div class="upload-card">
+    <div class="upload-spinner"></div>
+    <p style="font-size:1.05rem;font-weight:800;color:var(--accent);margin:0 0 .25rem;">資料上傳中請耐心等候</p>
+    <p id="uploadStatus" class="upload-sub" style="margin:0 0 .4rem;">正在讀取 CSV…</p>
+    <p class="upload-sub" id="uploadFileName"></p>
+    <div class="upload-progress-wrap" id="uploadProgressWrap" style="display:none">
+      <div class="upload-progress-bar" id="uploadProgressBar"></div>
+    </div>
+    <p class="upload-sub" id="uploadProgressText"></p>
+  </div>
+</div>
+
+<!-- Upload toast -->
+<div id="uploadToast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<div class="main">
+
+  <!-- Step 1: 匯入 -->
+  <div class="card">
+    <div class="card-title">① 匯入原始資料 <span class="badge">CSV</span></div>
+    <div style="margin-bottom:.8rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:.82rem;color:var(--muted);">快速載入範例：</span>
+      <span class="preset-chip" onclick="loadPreset('tech')">科技職缺（含異常）</span>
+      <span class="preset-chip" onclick="loadPreset('mixed')">混合職類（含空值）</span>
+      <span class="preset-chip" onclick="loadPreset('clean')">已清洗樣本</span>
+      <label class="preset-chip" style="cursor:pointer;">📂 上傳 CSV<input type="file" accept=".csv" onchange="loadFile(this)" style="display:none"></label>
+    </div>
+    <div class="import-area">
+      <div class="json-box">
+        <label>原始 CSV（貼上或載入範例）</label>
+        <textarea class="json-input" id="rawInput" placeholder="jobTitles,salaryMin,salaryMax,jobLocationAt,jobRqYear,jobCompanyIndustry,employeeCount
+Machine Learning Engineer,0,0,台北市,1~3年,電腦軟體服務業,100人"></textarea>
+      </div>
+      <div class="json-box">
+        <label>清洗後 CSV（自動產生）</label>
+        <textarea class="json-input" id="cleanOutput" readonly placeholder="執行清洗後顯示結果…" style="opacity:.7;"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runCleaning()">▶ 執行清洗</button>
+      <button class="btn btn-secondary" onclick="resetAll()">重設</button>
+      <button class="btn btn-secondary" onclick="downloadCSV()">⬇ 下載清洗後 CSV</button>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="card">
+    <div class="card-title">② 清洗管線</div>
+    <div class="pipeline" id="pipeline">
+      <div class="step" id="step0"><span class="step-icon">📥</span><div class="step-name">匯入</div><div class="step-count" id="sc0">—</div></div>
+      <div class="arrow" id="ar0">→</div>
+      <div class="step" id="step1"><span class="step-icon">🔍</span><div class="step-name">格式驗證</div><div class="step-count" id="sc1">—</div></div>
+      <div class="arrow" id="ar1">→</div>
+      <div class="step" id="step2"><span class="step-icon">🗑️</span><div class="step-name">移除空值</div><div class="step-count" id="sc2">—</div></div>
+      <div class="arrow" id="ar2">→</div>
+      <div class="step" id="step3"><span class="step-icon">💰</span><div class="step-name">薪資過濾</div><div class="step-count" id="sc3">—</div></div>
+      <div class="arrow" id="ar3">→</div>
+      <div class="step" id="step4"><span class="step-icon">📍</span><div class="step-name">地區標準化</div><div class="step-count" id="sc4">—</div></div>
+      <div class="arrow" id="ar4">→</div>
+      <div class="step" id="step5"><span class="step-icon">⏱️</span><div class="step-name">年資標準化</div><div class="step-count" id="sc5">—</div></div>
+      <div class="arrow" id="ar5">→</div>
+      <div class="step" id="step6"><span class="step-icon">✅</span><div class="step-name">完成</div><div class="step-count" id="sc6">—</div></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="log-box" id="logBox"><div class="log-info">▸ 等待匯入資料…</div></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow" style="opacity:.4;transition:opacity .5s;">
+    <div class="stat-box"><div class="stat-num total" id="sTotal">0</div><div class="stat-lbl">原始筆數</div></div>
+    <div class="stat-box"><div class="stat-num remove" id="sRemoved">0</div><div class="stat-lbl">移除筆數</div></div>
+    <div class="stat-box"><div class="stat-num clean" id="sClean">0</div><div class="stat-lbl">有效筆數</div></div>
+    <div class="stat-box"><div class="stat-num rate" id="sRate">0%</div><div class="stat-lbl">保留率</div></div>
+  </div>
+
+  <!-- Before / After Table -->
+  <div class="card">
+    <div class="card-title">③ 欄位轉換對照</div>
+    <div class="transform-section">
+      <div>
+        <div style="font-size:.82rem;font-weight:800;color:var(--err);margin-bottom:.5rem;">原始資料（前 10 筆）</div>
+        <div class="table-wrap">
+          <table id="rawTable">
+            <thead><tr><th>#</th><th>職稱</th><th>薪資最低</th><th>薪資最高</th><th>薪資型態</th><th>地區</th><th>年資</th><th>狀態</th></tr></thead>
+            <tbody id="rawTbody"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:1.5rem;">尚未匯入資料</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.82rem;font-weight:800;color:var(--ok);margin-bottom:.5rem;">清洗後資料（前 10 筆）</div>
+        <div class="table-wrap">
+          <table id="cleanTable">
+            <thead><tr><th>#</th><th>職稱</th><th>薪資最低</th><th>薪資最高</th><th>薪資型態</th><th>地區</th><th>年資</th></tr></thead>
+            <tbody id="cleanTbody"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:1.5rem;">尚未清洗</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 欄位清洗規則說明 -->
+  <div class="card">
+    <div class="card-title">④ 欄位清洗規則</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>欄位</th><th>原始問題</th><th>清洗操作</th><th>範例（前→後）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>jobSalaryType</strong></td><td><span class="tag tag-raw">原始文字</span></td><td>直接顯示，不做轉換</td><td><span class="tag tag-raw">月薪</span> → <span class="tag tag-clean">月薪</span></td></tr>
+          <tr><td><strong>jobSalaryType</strong></td><td><span class="tag tag-raw">時薪</span></td><td>時薪職缺整列移除</td><td><span class="tag tag-raw">時薪</span> → <span class="tag tag-drop">移除</span></td></tr>
+          <tr><td><strong>salaryMin / salaryMax</strong></td><td><span class="tag tag-raw">最低薪資=0</span><span class="tag tag-raw">Min &gt; Max</span><span class="tag tag-raw">低於基本工資</span><span class="tag tag-raw">高於500萬</span><span class="tag tag-raw">月薪&gt;50萬</span></td><td>移除最低薪資為0、Min&gt;Max、低於基本工資(27,470)、月薪超過50萬、高於500萬</td><td><span class="tag tag-raw">0 / 0</span> → <span class="tag tag-drop">移除</span></td></tr>
+          <tr><td><strong>年薪換算</strong></td><td><span class="tag tag-raw">年薪 / 12 &gt; 50萬</span></td><td>年薪型態換算月薪後超過50萬者移除</td><td><span class="tag tag-raw">年薪 7,200,000</span> → <span class="tag tag-drop">移除</span></td></tr>
+          <tr><td><strong>jobLocationAt</strong></td><td><span class="tag tag-raw">含「台」/「臺」混用</span><span class="tag tag-raw">空白</span></td><td>統一為「台XX」格式，空值填「其他」</td><td><span class="tag tag-raw">臺北市</span> → <span class="tag tag-clean">台北市</span></td></tr>
+          <tr><td><strong>jobRqYear</strong></td><td><span class="tag tag-raw">格式不統一</span><span class="tag tag-raw">空值</span></td><td>對應至固定區間段，空值填「經歷不拘~1年」</td><td><span class="tag tag-raw">1年</span> → <span class="tag tag-clean">1~3年</span></td></tr>
+          <tr><td><strong>jobTitles</strong></td><td><span class="tag tag-raw">含特殊字元</span><span class="tag tag-raw">空值</span></td><td>移除特殊符號，空值筆數整列移除</td><td><span class="tag tag-raw">工程師【急】</span> → <span class="tag tag-clean">工程師</span></td></tr>
+          <tr><td><strong>employeeCount</strong></td><td><span class="tag tag-raw">「人」字尾</span><span class="tag tag-raw">區間格式</span></td><td>擷取數字，轉為整數</td><td><span class="tag tag-raw">100人</span> → <span class="tag tag-clean">100</span></td></tr>
+          <tr><td><strong>jobCompanyIndustry</strong></td><td><span class="tag tag-raw">空值</span></td><td>空值填「其他」</td><td><span class="tag tag-raw">（空）</span> → <span class="tag tag-clean">其他</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="card">
+    <div class="card-title">⑤ 清洗結果視覺化</div>
+    <div class="charts-grid">
+      <div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">薪資分布（清洗前 vs 後）</div>
+        <div class="chart-box" id="chartSalary"></div>
+      </div>
+      <div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">移除原因分布</div>
+        <div class="chart-box" id="chartRemove"></div>
+      </div>
+      <div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">地區分布（清洗後）</div>
+        <div class="chart-box" id="chartLocation"></div>
+      </div>
+      <div>
+        <div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.5rem;">年資分布（清洗後）</div>
+        <div class="chart-box" id="chartExp"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+/* ── 範例資料（CSV 格式） ── */
+const HEADER = "jobTitles,salaryMin,salaryMax,jobLocationAt,jobRqYear,jobCompanyIndustry,employeeCount";
+const PRESETS = {
+  tech: `${HEADER}
+Machine Learning Engineer,80000,120000,台北市,3~5年,電腦軟體服務業,100人
+AI Engineer,0,0,臺北市,1~3年,網際網路相關業,50人
+Data Scientist,70000,100000,新北市,,,200人
+Backend Engineer,60000,90000,桃園市,1~3年,電腦系統整合服務業,30人
+DevOps Engineer【急徵】,75000,110000,台中市,3~5年,半導體業,500人
+Frontend Engineer,55000,80000,臺南市,1年,電腦軟體服務業,10人
+,50000,70000,高雄市,1~3年,金融業,1000人
+Data Engineer,120000,80000,台北市,5~7年,電腦軟體服務業,100人
+QA Engineer,45000,65000,新竹市,,半導體業,1000人以上
+Product Manager,90000,130000,台北市,7年以上,網際網路相關業,200人`,
+  mixed: `${HEADER}
+軟體工程師,50000,70000,臺北市,1~3年,電腦軟體服務業,50人
+業務人員,0,0,台中市,,,
+系統分析師,60000,85000,新北市,3~5年,電腦系統整合服務業,100人
+,40000,55000,高雄市,1年,金融業,200人
+資料分析師,55000,75000,臺灣台北,1~3年,,30人
+網頁設計師,38000,50000,桃園市,經歷不拘,網際網路相關業,10人
+雲端工程師,80000,115000,台北市,5~7年,電腦軟體服務業,500人
+行銷企劃,35000,45000,台北市,1~3年,其他,50人`,
+  clean: `${HEADER}
+Machine Learning Engineer,85000,120000,台北市,3~5年,電腦軟體服務業,100
+Data Scientist,75000,105000,新北市,1~3年,網際網路相關業,50
+Backend Engineer,60000,90000,台北市,1~3年,電腦系統整合服務業,200`,
+};
+
+/* ── CSV 解析 ── */
+function parseSalary(raw) {
+  if (!raw) return { salaryMin: 0, salaryMax: 0 };
+  const nums = raw.replace(/,/g, "").match(/\d+/g);
+  if (!nums) return { salaryMin: 0, salaryMax: 0 };
+  if (nums.length === 1) return { salaryMin: Number(nums[0]), salaryMax: Number(nums[0]) };
+  return { salaryMin: Number(nums[0]), salaryMax: Number(nums[1]) };
+}
+
+async function sleep(ms) { return new Promise(r => setTimeout(r,ms)); }
+const YIELD_EVERY = 500;
+async function processChunked(arr, fn) {
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    out.push(fn(arr[i], i));
+    if (i % YIELD_EVERY === YIELD_EVERY - 1) await sleep(0);
+  }
+  return out;
+}
+
+/* RFC-4180 tokenizer — handles quoted fields with embedded newlines/commas */
+function tokenizeCSV(text) {
+  text = text.replace(/^﻿/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const rows = [];
+  let row = [], cur = "", inQ = false, i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i += 2; continue; }
+        inQ = false; i++; continue;
+      }
+      cur += c; i++; continue;
+    }
+    if (c === '"') { inQ = true; i++; continue; }
+    if (c === ',') { row.push(cur.trim()); cur = ""; i++; continue; }
+    if (c === '\n') {
+      row.push(cur.trim()); cur = "";
+      if (row.some(v => v !== "")) rows.push(row);
+      row = []; i++; continue;
+    }
+    cur += c; i++;
+  }
+  row.push(cur.trim());
+  if (row.some(v => v !== "")) rows.push(row);
+  return rows;
+}
+
+function tokensToRows(tokens) {
+  if (tokens.length < 2) throw new Error("CSV 至少需要標題列與一筆資料");
+  const headers = tokens[0].map(h => h.replace(/^﻿/, "").trim());
+  const hasRawSalary = headers.includes("jobSalary") && !headers.includes("salaryMin");
+  return { headers, hasRawSalary };
+}
+
+function makeRow(headers, hasRawSalary, vals) {
+  const obj = {};
+  headers.forEach((h, j) => { obj[h] = vals[j] ?? ""; });
+  if (hasRawSalary) {
+    const { salaryMin, salaryMax } = parseSalary(obj.jobSalary || "");
+    obj.salaryMin = salaryMin;
+    obj.salaryMax = salaryMax;
+  }
+  return obj;
+}
+
+async function parseCSVAsyncWithProgress(text, onProgress) {
+  const tokens = tokenizeCSV(text);
+  const { headers, hasRawSalary } = tokensToRows(tokens);
+  const total = tokens.length - 1;
+  const rows = [];
+  for (let i = 1; i < tokens.length; i++) {
+    rows.push(makeRow(headers, hasRawSalary, tokens[i]));
+    if (i % YIELD_EVERY === 0) {
+      onProgress && onProgress(i, total);
+      await sleep(0);
+    }
+  }
+  onProgress && onProgress(total, total);
+  return rows;
+}
+
+async function parseCSVAsync(text) {
+  return parseCSVAsyncWithProgress(text, null);
+}
+
+function parseCSV(text) {
+  const tokens = tokenizeCSV(text);
+  const { headers, hasRawSalary } = tokensToRows(tokens);
+  return tokens.slice(1).map(vals => makeRow(headers, hasRawSalary, vals));
+}
+
+/* ── CSV 輸出 ── */
+function toCSV(records) {
+  const rows = records.map(r => [
+    r.title, r.min, r.max, r.loc, r.exp, r.ind, r.emp
+  ].join(","));
+  return [HEADER, ...rows].join("\n");
+}
+
+let lastCleanRecords = [];
+
+/* ── 清洗規則 ── */
+const LOCATION_MAP = {"臺北市":"台北市","臺中市":"台中市","臺南市":"台南市","臺東縣":"台東縣","臺灣台北":"台北市"};
+function normalizeLocation(v) {
+  if (!v) return "其他";
+  if (LOCATION_MAP[v]) return LOCATION_MAP[v];
+  return v.includes("台")||v.includes("市")||v.includes("縣") ? v : "其他";
+}
+function normalizeExp(v) {
+  if (!v) return "經歷不拘~1年";
+  const s = v.trim();
+  if (s.includes("不拘")) return "經歷不拘~1年";
+  if (["經歷不拘~1年","1~3年","3~5年","5~7年","7年以上"].includes(s)) return s;
+  const m = s.match(/^(\d+)/);
+  if (m) {
+    const n = parseInt(m[1]);
+    if (n <= 1)  return "經歷不拘~1年";
+    if (n <= 3)  return "1~3年";
+    if (n <= 5)  return "3~5年";
+    if (n <= 7)  return "5~7年";
+    return "7年以上";
+  }
+  return "經歷不拘~1年";
+}
+function normalizeEmployee(v) {
+  if (!v) return 0;
+  const n = parseInt(String(v).replace(/[^0-9]/g,""));
+  return isNaN(n) ? 0 : n;
+}
+function cleanTitle(v) {
+  return v ? v.replace(/[【】()（）★◆♦◇▲▶『』「」\[\]]/g,"").trim() : "";
+}
+
+function cleanRecord(row, idx) {
+  const reasons = [];
+  const title = cleanTitle(row.jobTitles || "");
+  if (!title) reasons.push("職稱空值");
+  const stype = (row.jobSalaryType || "").trim();
+  if (stype === "時薪") reasons.push("時薪排除");
+  const min = Number(row.salaryMin) || 0;
+  const max = Number(row.salaryMax) || 0;
+  if (min === 0) reasons.push("最低薪資為0");
+  if (min > 0 && max > 0 && min > max) reasons.push("Min>Max");
+  if ((min > 0 && min < 27470) || (max > 0 && max < 27470)) reasons.push("低於基本工資");
+  if (min > 5000000 || max > 5000000) reasons.push("薪資異常高值");
+  if (stype !== "年薪" && stype !== "時薪" && (min > 500000 || max > 500000)) reasons.push("月薪超標");
+  if (stype === "年薪" && (min / 12 > 500000 || max / 12 > 500000)) reasons.push("年薪換算超標");
+  const loc  = normalizeLocation(row.jobLocationAt);
+  const exp  = normalizeExp(row.jobRqYear);
+  const ind  = row.jobCompanyIndustry || "其他";
+  const emp  = normalizeEmployee(row.employeeCount);
+  return {
+    idx, raw: row, title, min, max, loc, exp, ind, emp,
+    drop: reasons.length > 0, reasons,
+  };
+}
+
+/* ── Log ── */
+const logBox = document.getElementById("logBox");
+function log(msg, type="info") {
+  const cls = { info:"log-info", ok:"log-ok", warn:"log-warn", err:"log-err" }[type];
+  const el = document.createElement("div");
+  el.className = cls;
+  el.textContent = "▸ " + msg;
+  logBox.appendChild(el);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function clearLog() { logBox.innerHTML = ""; }
+
+/* ── Pipeline animation ── */
+let steps = [];
+function activateStep(i, count) {
+  if (i > 0) {
+    document.getElementById("step" + (i-1)).classList.remove("active");
+    document.getElementById("step" + (i-1)).classList.add("done");
+    document.getElementById("ar" + (i-1)).classList.add("lit");
+  }
+  document.getElementById("step" + i).classList.add("active");
+  document.getElementById("sc" + i).textContent = count !== undefined ? count + " 筆" : "…";
+  document.getElementById("progressBar").style.width = ((i+1)/7*100) + "%";
+}
+function resetPipeline() {
+  for (let i = 0; i <= 6; i++) {
+    const s = document.getElementById("step" + i);
+    s.classList.remove("active","done");
+    document.getElementById("sc" + i).textContent = "—";
+  }
+  for (let i = 0; i <= 5; i++) document.getElementById("ar" + i).classList.remove("lit");
+  document.getElementById("progressBar").style.width = "0%";
+}
+
+/* ── Table render ── */
+const money = v => "NT$" + Math.round(v).toLocaleString();
+
+function renderRawTable(records) {
+  const tbody = document.getElementById("rawTbody");
+  tbody.innerHTML = records.slice(0,10).map((r,i) => {
+    const status = r.drop
+      ? r.reasons.map(rs => `<span class="tag tag-drop">${rs}</span>`).join("")
+      : `<span class="tag tag-clean">保留</span>`;
+    return `<tr class="row-enter ${r.drop?"row-drop":"row-ok"}" style="animation-delay:${i*60}ms">
+      <td>${r.idx+1}</td>
+      <td>${r.raw.jobTitles||"(空)"}</td>
+      <td>${r.raw.salaryMin||0}</td>
+      <td>${r.raw.salaryMax||0}</td>
+      <td>${r.raw.jobSalaryType||"—"}</td>
+      <td>${r.raw.jobLocationAt||"(空)"}</td>
+      <td>${r.raw.jobRqYear||"(空)"}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderCleanTable(records) {
+  const kept = records.filter(r => !r.drop);
+  const tbody = document.getElementById("cleanTbody");
+  if (!kept.length) { tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:1.5rem;">無有效資料</td></tr>`; return; }
+  tbody.innerHTML = kept.slice(0,10).map((r,i) => `
+    <tr class="row-enter row-ok" style="animation-delay:${i*60}ms">
+      <td>${i+1}</td>
+      <td>${r.title}</td>
+      <td>${money(r.min)}</td>
+      <td>${money(r.max)}</td>
+      <td>${r.raw.jobSalaryType||"—"}</td>
+      <td>${r.loc}</td>
+      <td>${r.exp}</td>
+    </tr>`).join("");
+}
+
+/* ── Stats ── */
+function updateStats(total, removed, clean) {
+  animCount("sTotal", total);
+  animCount("sRemoved", removed);
+  animCount("sClean", clean);
+  const rate = total > 0 ? Math.round(clean/total*100) : 0;
+  document.getElementById("sRate").textContent = rate + "%";
+  document.getElementById("statsRow").style.opacity = "1";
+}
+
+function animCount(id, target) {
+  const el = document.getElementById(id);
+  let cur = 0;
+  const step = Math.ceil(target / 30);
+  let frame;
+  function tick() {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur.toLocaleString();
+    if (cur < target) frame = requestAnimationFrame(tick);
+  }
+  frame = requestAnimationFrame(tick);
+}
+
+/* ── Charts ── */
+let charts = {};
+function initCharts() {
+  ["chartSalary","chartRemove","chartLocation","chartExp"].forEach(id => {
+    if (charts[id]) charts[id].dispose();
+    charts[id] = echarts.init(document.getElementById(id));
+  });
+}
+
+function renderCharts(records) {
+  const kept = records.filter(r => !r.drop);
+  const allMins  = records.map(r => r.min).filter(v => v > 0);
+  const keptMins = kept.map(r => r.min).filter(v => v > 0);
+
+  /* 薪資分布 */
+  const bins = [30,40,50,60,70,80,90,100,120,150];
+  function toBin(vals) {
+    const counts = new Array(bins.length-1).fill(0);
+    vals.forEach(v => { for(let i=0;i<bins.length-1;i++) if(v>=bins[i]*1000 && v<bins[i+1]*1000){ counts[i]++; break; } });
+    return counts;
+  }
+  charts["chartSalary"].setOption({
+    tooltip: { trigger:"axis" },
+    legend: { data:["清洗前","清洗後"], bottom:0 },
+    xAxis: { type:"category", data: bins.slice(0,-1).map((b,i)=>`${b}k~${bins[i+1]}k`), axisLabel:{fontSize:11} },
+    yAxis: { type:"value", name:"筆數" },
+    series: [
+      { name:"清洗前", type:"bar", data: toBin(allMins),  itemStyle:{color:"#fca5a5"}, barGap:"0%" },
+      { name:"清洗後", type:"bar", data: toBin(keptMins), itemStyle:{color:"#1a56db"} },
+    ]
+  });
+
+  /* 移除原因 */
+  const reasonCounts = {};
+  records.filter(r=>r.drop).forEach(r=>r.reasons.forEach(rs=>{ reasonCounts[rs]=(reasonCounts[rs]||0)+1; }));
+  reasonCounts["保留"] = kept.length;
+  charts["chartRemove"].setOption({
+    tooltip: { trigger:"item", formatter:"{b}: {c} 筆 ({d}%)" },
+    series:[{ type:"pie", radius:["40%","70%"], label:{fontSize:12},
+      data: Object.entries(reasonCounts).map(([name,value])=>({
+        name, value,
+        itemStyle:{ color: name==="保留" ? "#1a56db" : name==="薪資為0" ? "#ef4444" : name==="職稱空值" ? "#f59e0b" : "#94a3b8" }
+      }))
+    }]
+  });
+
+  /* 地區分布 */
+  const locCnt = {};
+  kept.forEach(r=>{ locCnt[r.loc]=(locCnt[r.loc]||0)+1; });
+  const locSorted = Object.entries(locCnt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  charts["chartLocation"].setOption({
+    tooltip:{ trigger:"axis" },
+    xAxis:{ type:"value" },
+    yAxis:{ type:"category", data: locSorted.map(e=>e[0]).reverse(), axisLabel:{fontSize:11} },
+    series:[{ type:"bar", data: locSorted.map(e=>e[1]).reverse(), itemStyle:{color:"#1a56db"} }]
+  });
+
+  /* 年資分布 */
+  const expOrder = ["經歷不拘~1年","1~3年","3~5年","5~7年","7年以上"];
+  const expCnt = {};
+  kept.forEach(r=>{ expCnt[r.exp]=(expCnt[r.exp]||0)+1; });
+  charts["chartExp"].setOption({
+    tooltip:{ trigger:"axis" },
+    xAxis:{ type:"category", data: expOrder, axisLabel:{fontSize:11} },
+    yAxis:{ type:"value", name:"筆數" },
+    series:[{ type:"bar", data: expOrder.map(e=>expCnt[e]||0), itemStyle:{color:"#1a56db"}, label:{show:true,position:"top",fontSize:11} }]
+  });
+}
+
+/* ── Main: run cleaning ── */
+async function runCleaning() {
+  clearLog();
+  resetPipeline();
+  initCharts();
+
+  /* Parse CSV — chunked to avoid blocking */
+  let raw;
+  try {
+    const text = document.getElementById("rawInput").value.trim();
+    raw = await parseCSVAsync(text);
+  } catch(e) {
+    log("CSV 解析失敗：" + e.message, "err");
+    return;
+  }
+
+  /* Step 0: 匯入 */
+  activateStep(0, raw.length);
+  log(`匯入成功，共 ${raw.length} 筆`, "info");
+  await sleep(200);
+
+  /* Step 1: 格式驗證 */
+  activateStep(1, raw.length);
+  log(`格式驗證中…`, "info");
+  await sleep(0);
+  const required = ["jobTitles","salaryMin","salaryMax"];
+  let missingCount = 0;
+  raw.forEach((r,i) => {
+    const missing = required.filter(k => !(k in r));
+    if (missing.length) missingCount++;
+  });
+  if (missingCount) log(`${missingCount} 筆缺少必要欄位`, "warn");
+  else log("格式驗證通過", "ok");
+  await sleep(200);
+
+  /* Step 2: 移除空值 */
+  const records = await processChunked(raw, (r, i) => cleanRecord(r, i));
+  const afterNull = records.filter(r => !r.reasons.includes("職稱空值")).length;
+  activateStep(2, afterNull);
+  const nullDropped = records.filter(r => r.reasons.includes("職稱空值")).length;
+  log(`移除職稱空值 ${nullDropped} 筆`, nullDropped > 0 ? "warn" : "ok");
+
+  /* Step 3: 薪資過濾 */
+  await sleep(400);
+  const SALARY_REASONS = ["最低薪資為0","Min>Max","低於基本工資","薪資異常高值","月薪超標","年薪換算超標","時薪排除"];
+  const salaryDropped = records.filter(r => r.reasons.some(rs => SALARY_REASONS.includes(rs))).length;
+  activateStep(3, records.filter(r => !r.drop).length);
+  const cnt = rs => records.filter(r => r.reasons.includes(rs)).length;
+  log(`移除薪資/型態異常 ${salaryDropped} 筆（最低薪資為0: ${cnt("最低薪資為0")}、Min>Max: ${cnt("Min>Max")}、低於基本工資: ${cnt("低於基本工資")}、月薪超標: ${cnt("月薪超標")}、高於500萬: ${cnt("薪資異常高值")}、年薪換算超標: ${cnt("年薪換算超標")}、時薪: ${cnt("時薪排除")}）`, salaryDropped > 0 ? "warn" : "ok");
+
+  /* Step 4: 地區標準化 */
+  await sleep(400);
+  const locFixed = records.filter(r => !r.drop && r.raw.jobLocationAt !== r.loc).length;
+  activateStep(4, records.filter(r=>!r.drop).length);
+  log(`地區標準化 ${locFixed} 筆（臺→台 等）`, "ok");
+
+  /* Step 5: 年資標準化 */
+  await sleep(400);
+  const expFixed = records.filter(r => !r.drop && normalizeExp(r.raw.jobRqYear||"") !== (r.raw.jobRqYear||"")).length;
+  activateStep(5, records.filter(r=>!r.drop).length);
+  log(`年資標準化 ${expFixed} 筆`, "ok");
+
+  /* Step 6: 完成 */
+  await sleep(400);
+  const kept = records.filter(r => !r.drop);
+  activateStep(6, kept.length);
+  document.getElementById("step5").classList.remove("active");
+  document.getElementById("step5").classList.add("done");
+  document.getElementById("ar5").classList.add("lit");
+  document.getElementById("step6").classList.add("done");
+
+  /* Output CSV */
+  lastCleanRecords = kept.map(r => ({ title:r.title, min:r.min, max:r.max, loc:r.loc, exp:r.exp, ind:r.ind, emp:r.emp }));
+  document.getElementById("cleanOutput").value = toCSV(lastCleanRecords);
+
+  /* Tables */
+  renderRawTable(records);
+  renderCleanTable(records);
+
+  /* Stats */
+  updateStats(raw.length, raw.length - kept.length, kept.length);
+
+  /* Charts — yield before heavy render */
+  await sleep(0);
+  renderCharts(records);
+
+  log(`清洗完成！保留 ${kept.length}/${raw.length} 筆（${Math.round(kept.length/raw.length*100)}%）`, "ok");
+}
+
+let toastTimer = null;
+function showToast(type, msg) {
+  const t = document.getElementById("uploadToast");
+  document.getElementById("toastIcon").textContent = type === "ok" ? "✅" : "❌";
+  document.getElementById("toastMsg").textContent = msg;
+  t.className = "show " + type;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ""; }, 3000);
+}
+
+function loadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const overlay      = document.getElementById("uploadOverlay");
+  const statusEl     = document.getElementById("uploadStatus");
+  const progressWrap = document.getElementById("uploadProgressWrap");
+  const progressBar  = document.getElementById("uploadProgressBar");
+  const progressText = document.getElementById("uploadProgressText");
+
+  document.getElementById("uploadFileName").textContent = file.name;
+  statusEl.textContent = "正在讀取 CSV…";
+  progressWrap.style.display = "none";
+  progressBar.style.width = "0%";
+  progressText.textContent = "";
+  overlay.classList.add("show");
+
+  const reader = new FileReader();
+  reader.onprogress = e => {
+    if (e.lengthComputable) {
+      const pct = Math.round(e.loaded / e.total * 100);
+      progressWrap.style.display = "block";
+      progressBar.style.width = pct + "%";
+      progressText.textContent = `${pct}%`;
+    }
+  };
+  reader.onload = async e => {
+    progressBar.style.width = "100%";
+    progressText.textContent = "100%";
+    statusEl.textContent = "解析資料中…";
+    const text = e.target.result;
+    const totalLines = text.trim().split(/\r?\n/).filter(l => l.trim()).length - 1;
+
+    /* 用可回報進度的 parseCSVAsync 變體 */
+    try {
+      const rows = await parseCSVAsyncWithProgress(text, (done, total) => {
+        const pct = Math.round(done / total * 100);
+        progressBar.style.width = pct + "%";
+        progressText.textContent = `解析 ${done.toLocaleString()} / ${total.toLocaleString()} 筆`;
+      });
+      overlay.classList.remove("show");
+      document.getElementById("rawInput").value = text;
+      showToast("ok", `已載入「${file.name}」，共 ${totalLines.toLocaleString()} 筆資料`);
+    } catch(err) {
+      overlay.classList.remove("show");
+      showToast("err", `載入失敗：${err.message}`);
+    }
+  };
+  reader.onerror = () => {
+    overlay.classList.remove("show");
+    showToast("err", "檔案讀取失敗，請確認檔案格式");
+  };
+  reader.readAsText(file, "UTF-8");
+  input.value = "";
+}
+
+function downloadCSV() {
+  if (!lastCleanRecords.length) { alert("請先執行清洗"); return; }
+  const blob = new Blob([toCSV(lastCleanRecords)], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "cleaned_data.csv";
+  a.click();
+}
+
+function resetAll() {
+  document.getElementById("rawInput").value = "";
+  document.getElementById("cleanOutput").value = "";
+  lastCleanRecords = [];
+  clearLog();
+  log("等待匯入資料…", "info");
+  resetPipeline();
+  document.getElementById("rawTbody").innerHTML = `<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:1.5rem;">尚未匯入資料</td></tr>`;
+  document.getElementById("cleanTbody").innerHTML = `<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:1.5rem;">尚未清洗</td></tr>`;
+  document.getElementById("statsRow").style.opacity = ".4";
+  ["sTotal","sRemoved","sClean"].forEach(id => document.getElementById(id).textContent = "0");
+  document.getElementById("sRate").textContent = "0%";
+  initCharts();
+}
+
+function loadPreset(key) {
+  document.getElementById("rawInput").value = PRESETS[key];
+}
+
+/* init */
+initCharts();
+loadPreset('tech');
+
+window.addEventListener('pagehide', () => {
+  Object.values(charts).forEach(c => { try { c.dispose(); } catch(_){} });
+  charts = {};
+  lastCleanRecords = [];
+});
+</script>
+</body>
+</html>

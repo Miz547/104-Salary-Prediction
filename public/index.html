@@ -1,0 +1,528 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>104 薪資預測模型研究系統</title>
+    <style>
+        :root {
+            --accent: #1a56db;
+            --accent-strong: #1e40af;
+            --accent-light: #e8f0fe;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --navy: #1e293b;
+        }
+        body[data-theme="dark"] {
+            --accent: #ff8a3d;
+            --accent-strong: #ffb26f;
+            --accent-light: #3d2a1d;
+            --text: #f8fafc;
+            --muted: #c8b8aa;
+            --border: #46382f;
+            --bg: #17110d;
+            --navy: #0f0b08;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; transition: background .28s ease, color .28s ease; }
+        
+
+        /* ── Navbar ── */
+        .navbar { background: var(--navy); padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+        .navbar-brand span { color: #93c5fd; }
+        .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+        .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+        .navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+        .theme-toggle {
+            align-items: center;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 999px;
+            color: #f8fafc;
+            cursor: pointer;
+            display: inline-flex;
+            font-size: .82rem;
+            font-weight: 800;
+            gap: .45rem;
+            min-height: 2.25rem;
+            padding: 0 .75rem 0 .45rem;
+            transition: background .18s ease, border-color .18s ease, transform .18s ease;
+        }
+        .theme-toggle:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+        .theme-toggle__icon {
+            align-items: center;
+            background: #ffb26f;
+            border-radius: 50%;
+            color: #1e293b;
+            display: inline-flex;
+            height: 1.45rem;
+            justify-content: center;
+            width: 1.45rem;
+        }
+        body[data-theme="dark"] .theme-toggle__icon { background: #334155; color: #fff; }
+
+        /* ── Hero ── */
+        .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; padding: clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,4rem); background: #fff; border-bottom: 1px solid var(--border); align-items: center; }
+        body[data-theme="dark"] .hero,
+        body[data-theme="dark"] .method,
+        body[data-theme="dark"] .module-card,
+        body[data-theme="dark"] .stat-card {
+            background: #211813;
+        }
+        .hero__kicker { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+        .hero__title { font-size: clamp(1.8rem,3.5vw,2.8rem); font-weight: 800; line-height: 1.2; color: var(--text); margin-bottom: 1.2rem; opacity: 0; }
+        .hero__title.is-visible { opacity: 1; }
+        .hero-title-line { display: block; overflow: hidden; }
+        .hero-title-line__inner {
+            display: inline-block;
+            opacity: 0;
+            transform: translate3d(0,112%,0) rotateZ(3deg);
+            transition: opacity .42s ease, transform 1s cubic-bezier(.16,1,.3,1);
+            transition-delay: calc(var(--line-index,0) * 150ms);
+            will-change: opacity, transform;
+        }
+        .hero__title.is-visible .hero-title-line__inner {
+            opacity: 1;
+            transform: translate3d(0,0,0) rotateZ(0deg);
+        }
+        .hero__desc { color: var(--muted); font-size: .97rem; line-height: 1.8; margin-bottom: 1.8rem; max-width: 36rem; }
+        .hero__actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+        .btn-primary { background: var(--accent); border: 1px solid var(--accent); border-radius: 5px; color: #fff; font-size: .9rem; font-weight: 700; padding: .65rem 1.4rem; text-decoration: none; transition: background .15s; }
+        .btn-primary:hover { background: var(--accent-strong); }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-size: .9rem; font-weight: 600; padding: .65rem 1.4rem; text-decoration: none; transition: .15s; }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── Stats ── */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: .2rem; }
+        .stat-card__num { font-size: 1.9rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; min-height: 1em; }
+        .stat-card__num.is-rolling { text-shadow: 0 0 14px rgba(26,86,219,.22); }
+        .stat-card__lbl { font-size: .85rem; font-weight: 700; color: var(--text); }
+        .stat-card__sub { font-size: .76rem; color: var(--muted); }
+
+        /* ── Modules ── */
+        .modules {
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            padding: clamp(3rem,6vw,5rem) 0;
+        }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .modules .section-header {
+            margin: 0 auto 2.5rem;
+            max-width: min(74ch, calc(100% - 2rem));
+            padding: 0 1rem;
+            text-align: center;
+        }
+        .modules .section-header h1,
+        .modules .section-header h2 {
+            color: var(--text);
+            font-size: clamp(1.45rem,2.5vw,2rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: .5rem;
+            opacity: 0;
+        }
+        .modules .section-header h1.is-visible,
+        .modules .section-header h2.is-visible { opacity: 1; }
+        .section-header h2 { font-size: clamp(1.45rem,2.5vw,2rem); font-weight: 800; color: var(--text); margin-bottom: .5rem; }
+        .section-header p { color: var(--muted); font-size: .95rem; }
+        .modules .section-header p {
+            color: var(--muted);
+            font-size: .95rem;
+            line-height: 1.6;
+            max-width: 70ch;
+            margin: 0 auto;
+        }
+        .split-heading {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+        }
+        .split-word {
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .split-char-clip {
+            display: inline-block;
+            overflow: hidden;
+            padding-bottom: .08em;
+        }
+        .split-char {
+            display: inline-block;
+            opacity: 0;
+            transform: translate3d(0,112%,0) rotateZ(5deg);
+            transition: opacity .34s ease, transform .92s cubic-bezier(.16,1,.3,1);
+            transition-delay: calc(var(--char-index,0) * 85ms);
+            will-change: opacity, transform;
+        }
+        .split-heading.is-visible .split-char {
+            opacity: 1;
+            transform: translate3d(0,0,0) rotateZ(0deg);
+        }
+        .modules-carousel {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+        .modules-carousel::before,
+        .modules-carousel::after {
+            content: "";
+            height: 100%;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            width: clamp(2rem,8vw,7rem);
+            z-index: 2;
+        }
+        .modules-carousel::before { background: linear-gradient(90deg,var(--bg),transparent); left: 0; }
+        .modules-carousel::after { background: linear-gradient(270deg,var(--bg),transparent); right: 0; }
+        .modules-track {
+            --module-carousel-distance: 0px;
+            animation: module-carousel-loop 42s linear infinite;
+            display: flex;
+            gap: 1rem;
+            padding: .4rem clamp(1.5rem,5vw,4rem) 1rem;
+            width: max-content;
+            will-change: transform;
+        }
+        .modules-carousel:hover .modules-track,
+        .modules-carousel:focus-within .modules-track { animation-play-state: paused; }
+        .module-card {
+            animation: module-card-reveal .72s cubic-bezier(.16,1,.3,1) both;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 18px 44px rgba(15,23,42,.08);
+            color: inherit;
+            display: flex;
+            flex: 0 0 min(360px,82vw);
+            flex-direction: column;
+            gap: .5rem;
+            min-height: 240px;
+            padding: 1.5rem;
+            text-decoration: none;
+            transition: box-shadow .18s, transform .18s, border-color .18s;
+        }
+        .module-card:nth-child(2) { animation-delay: .08s; }
+        .module-card:nth-child(3) { animation-delay: .16s; }
+        .module-card:nth-child(4) { animation-delay: .24s; }
+        .module-card:nth-child(5) { animation-delay: .32s; }
+        .module-card:nth-child(6) { animation-delay: .40s; }
+        .module-card:hover,
+        .module-card:focus-visible {
+            border-color: var(--accent);
+            box-shadow: 0 24px 60px rgba(26,86,219,.14);
+            outline: none;
+            transform: translateY(-4px);
+        }
+        .module-card__icon { font-size: 1.5rem; margin-bottom: .3rem; }
+        .module-card h3 { color: var(--text); font-size: 1rem; font-weight: 700; }
+        .module-card p { color: var(--muted); flex: 1; font-size: .85rem; line-height: 1.65; }
+        .module-card__link { color: var(--accent); font-size: .82rem; font-weight: 700; margin-top: .5rem; }
+        @keyframes module-card-reveal {
+            from { opacity: 0; transform: translate3d(0,54px,0); }
+            to { opacity: 1; transform: translate3d(0,0,0); }
+        }
+        @keyframes module-carousel-loop {
+            from { transform: translate3d(0,0,0); }
+            to { transform: translate3d(calc(var(--module-carousel-distance) * -1),0,0); }
+        }
+
+        /* ── Method ── */
+        .method { padding: clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,4rem); background: #fff; border-top: 1px solid var(--border); }
+        .method-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+        .method-step { border-left: 3px solid var(--accent); padding-left: 1.1rem; }
+        .method-step__num { display: block; font-size: .75rem; font-weight: 800; color: var(--accent); letter-spacing: .08em; margin-bottom: .5rem; }
+        .method-step h3 { font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: .5rem; }
+        .method-step p { font-size: .83rem; color: var(--muted); line-height: 1.7; }
+
+        /* ── Footer ── */
+        .footer { background: var(--navy); color: #475569; display: flex; flex-direction: column; align-items: center; gap: .35rem; font-size: .82rem; padding: 1.5rem clamp(1rem,4vw,2.5rem); text-align: center; }
+        .footer__note { color: #334155; }
+
+        @media (max-width:900px) {
+            .navbar { flex-direction: column; align-items: flex-start; padding: .75rem 1rem; }
+            .hero { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .modules-grid { grid-template-columns: 1fr 1fr; }
+            .method-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width:600px) {
+            .modules-grid, .method-grid, .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="navbar-brand" href="/index.html"><span>AI</span> 薪資預測模型研究系統</a>
+    <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/salary_dashboard.html">三模型工作台</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html">薪資預測</a>
+        <a href="/salary-url.html">104 面議預測</a>
+        <a href="/faq.html">專案問答</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="切換網站模式" aria-pressed="false">
+        <span class="theme-toggle__icon" aria-hidden="true">☀</span>
+        <span class="theme-toggle__text">淺色</span>
+    </button>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+    <div>
+        <p class="hero__kicker">Python 與 AI 實務應用專題 · 115 年</p>
+        <h1 class="hero__title" data-hero-title>
+            <span class="hero-title-line"><span class="hero-title-line__inner" style="--line-index:0">104 人力銀行薪資資料</span></span>
+            <span class="hero-title-line"><span class="hero-title-line__inner" style="--line-index:1">機器學習預測研究</span></span>
+        </h1>
+        <p class="hero__desc">
+            本研究以 104 人力銀行公開職缺資料為基礎，採用 CatBoost、LightGBM、XGBoost
+            梯度提升演算法，建立薪資預測模型。輸入職務名稱、地區、年資等結構化特徵，
+            模型即時輸出預估月薪區間，並提供特徵重要性與地區薪資分布視覺化分析。
+        </p>
+        <div class="hero__actions">
+            <a href="/predict.html" class="btn-primary">進入薪資預測</a>
+            <a href="/report.html" class="btn-ghost">查看研究報告</a>
+        </div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-card__num">20000</span><span>+</span>
+            <span class="stat-card__lbl">職缺資料</span>
+            <span class="stat-card__sub">來自104公開職缺</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__num">95</span> <span>%</span>
+            <span class="stat-card__lbl">資料完整率</span>
+            <span class="stat-card__sub">完成資料清洗與特徵工程</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__num">3</span>
+            <span class="stat-card__lbl">預測模型</span>
+            <span class="stat-card__sub">CatBoost · LightGBM · XGBoost</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card__num">104薪資情報</span>
+            <span class="stat-card__lbl">模型驗證</span>
+            <span class="stat-card__sub">以公開薪資資料進行比對測試</span>
+        </div>
+    </div>
+</section>
+
+<!-- 研究模組 -->
+<section class="modules">
+    <div class="section-header">
+        <h1 class="split-heading modules-title" data-split-text aria-label="研究模組">研究模組</h1>
+        <p>各子系統功能說明，點擊進入對應研究工具</p>
+    </div>
+    <div class="modules-carousel" aria-label="研究模組輪播">
+        <div class="modules-track">
+        <a href="/predict.html" class="module-card">
+            <div class="module-card__icon">📊</div>
+            <h3>薪資預測</h3>
+            <p>輸入職務名稱、地區與年資，以 CatBoost 模型即時預測薪資區間，並展示地區薪資分布與特徵重要性圖表。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        <a href="/salary-url.html" class="module-card">
+            <div class="module-card__icon">🔗</div>
+            <h3>104 面議薪資預測</h3>
+            <p>貼上 104 職缺網址，系統自動爬取職缺結構化資料，帶入三個模型分別輸出薪資預測結果。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        <a href="/salary_dashboard.html" class="module-card">
+            <div class="module-card__icon">⚖️</div>
+            <h3>三模型比較工作台</h3>
+            <p>同時輸出 CatBoost、LightGBM、XGBoost 三個模型的預測結果，便於交叉比對與誤差分析。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        <a href="/validation/salary_validation_admin_dashboard.html" class="module-card">
+            <div class="module-card__icon">✅</div>
+            <h3>模型驗證</h3>
+            <p>測試集預測誤差分析、模型泛化能力評估，呈現各模型在不同職類與地區的預測精度。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        <a href="/report.html" class="module-card">
+            <div class="module-card__icon">📑</div>
+            <h3>研究報告</h3>
+            <p>完整研究簡報投影片，涵蓋研究動機、資料前處理、模型訓練流程與實驗結果分析。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        <a href="/faq.html" class="module-card">
+            <div class="module-card__icon">💬</div>
+            <h3>專案問答</h3>
+            <p>關於資料來源、模型架構、預測方法與研究限制的常見問題整理，適合快速了解本研究全貌。</p>
+            <span class="module-card__link">進入 →</span>
+        </a>
+        </div>
+    </div>
+</section>
+
+<!-- 研究方法 -->
+<section class="method">
+    <div class="section-header">
+        <h2>研究方法摘要</h2>
+    </div>
+    <div class="method-grid">
+        <div class="method-step">
+            <span class="method-step__num">01</span>
+            <h3>資料蒐集</h3>
+            <p>以 Python 爬蟲擷取 104 人力銀行公開職缺，保留含薪資範圍記錄，移除異常值後取得有效訓練樣本。</p>
+        </div>
+        <div class="method-step">
+            <span class="method-step__num">02</span>
+            <h3>特徵工程</h3>
+            <p>職務名稱 TF-IDF 向量化、K-Means 職務分群、類別欄位 Target Encoding、薪資年資段正規化。</p>
+        </div>
+        <div class="method-step">
+            <span class="method-step__num">03</span>
+            <h3>模型訓練</h3>
+            <p>以 CatBoost、LightGBM、XGBoost 分別訓練最低薪與最高薪預測子模型，共六個模型，以 MAE、RMSE、R² 評估。</p>
+        </div>
+        <div class="method-step">
+            <span class="method-step__num">04</span>
+            <h3>系統整合</h3>
+            <p>Python Flask API 提供預測端點，Next.js 前端整合即時預測介面、視覺化圖表與研究展示頁面。</p>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>© 2025 Python 與 AI 實務應用專題 · 104 薪資預測模型研究</p>
+    <p class="footer__note">本系統資料僅供學術研究用途，不涉及商業應用</p>
+</footer>
+
+<script>
+const themeToggle = document.querySelector('.theme-toggle');
+const themeIcon = document.querySelector('.theme-toggle__icon');
+const themeText = document.querySelector('.theme-toggle__text');
+
+function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.body.dataset.theme = isDark ? 'dark' : 'light';
+    if (themeToggle) themeToggle.setAttribute('aria-pressed', String(isDark));
+    if (themeIcon) themeIcon.textContent = isDark ? '☾' : '☀';
+    if (themeText) themeText.textContent = isDark ? '深色' : '淺色';
+    localStorage.setItem('salary-theme', isDark ? 'dark' : 'light');
+}
+
+applyTheme(localStorage.getItem('salary-theme') || 'light');
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+}
+const heroTitle = document.querySelector('[data-hero-title]');
+if (heroTitle) {
+    requestAnimationFrame(() => heroTitle.classList.add('is-visible'));
+}
+
+document.querySelectorAll('.stat-card__num').forEach((number) => {
+    const finalValue = number.textContent.trim();
+    if (!/^\d+$/.test(finalValue)) return;
+
+    const duration = 1000 + Math.random() * 200;
+    const start = performance.now();
+    const finalLength = finalValue.length;
+    number.classList.add('is-rolling');
+    number.setAttribute('aria-label', finalValue);
+
+    function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(1, elapsed / duration);
+        const shouldSlow = progress > .72;
+
+        if (progress < 1) {
+            number.textContent = Array.from(finalValue).map((digit, index) => {
+                const digitProgress = Math.min(1, progress + index * .08);
+                if (shouldSlow && digitProgress > .9) return digit;
+                return Math.floor(Math.random() * 10);
+            }).join('').padStart(finalLength, '0');
+            requestAnimationFrame(tick);
+            return;
+        }
+
+        number.textContent = finalValue;
+        number.classList.remove('is-rolling');
+    }
+
+    requestAnimationFrame(tick);
+});
+
+document.querySelectorAll('[data-split-text]').forEach((heading) => {
+    const text = heading.textContent.trim();
+    heading.setAttribute('aria-label', text);
+    heading.textContent = '';
+
+    const word = document.createElement('span');
+    word.className = 'split-word';
+    word.setAttribute('aria-hidden', 'true');
+
+    Array.from(text).forEach((char, index) => {
+        const clip = document.createElement('span');
+        const inner = document.createElement('span');
+        clip.className = 'split-char-clip';
+        inner.className = 'split-char';
+        inner.style.setProperty('--char-index', index);
+        inner.textContent = char;
+        clip.appendChild(inner);
+        word.appendChild(clip);
+    });
+
+    heading.appendChild(word);
+});
+
+const splitObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            splitObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: .45 });
+
+document.querySelectorAll('[data-split-text]').forEach((heading) => {
+    splitObserver.observe(heading);
+});
+
+const moduleTrack = document.querySelector('.modules-track');
+
+function setupModuleCarousel() {
+    if (!moduleTrack || moduleTrack.dataset.loopReady === 'true') return;
+    const cards = Array.from(moduleTrack.children);
+    cards.forEach((card) => {
+        const clone = card.cloneNode(true);
+        clone.setAttribute('aria-hidden', 'true');
+        clone.tabIndex = -1;
+        moduleTrack.appendChild(clone);
+    });
+
+    function updateDistance() {
+        const firstClone = moduleTrack.children[cards.length];
+        if (!firstClone) return;
+        moduleTrack.style.setProperty('--module-carousel-distance', `${firstClone.offsetLeft}px`);
+    }
+
+    moduleTrack.dataset.loopReady = 'true';
+    updateDistance();
+    window.addEventListener('resize', updateDistance);
+}
+
+setupModuleCarousel();
+</script>
+</body>
+</html>
+
+
+
+

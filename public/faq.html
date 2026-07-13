@@ -1,0 +1,568 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案問答 FAQ — AI 薪資預測模型研究</title>
+    <style>
+        :root {
+            --accent: #1a56db;
+            --accent-light: #e8f0fe;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.7; }
+
+        .navbar { background: #1e293b; padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+        .navbar-brand span { color: #93c5fd; }
+        .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+        .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+        .navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+
+        .page-header { background: #fff; border-bottom: 1px solid var(--border); padding: 32px 32px 24px; }
+        .page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .page-header p  { font-size: 13px; color: var(--muted); }
+
+        .container { max-width: 860px; margin: 32px auto; padding: 0 24px 60px; }
+
+        /* 分類標籤 */
+        .cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+        .cat-tab { padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--muted); background: #fff; cursor: pointer; transition: .15s; }
+        .cat-tab:hover { border-color: var(--accent); color: var(--accent); }
+        .cat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        /* FAQ 區塊 */
+        .faq-section { margin-bottom: 36px; }
+        .faq-section-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+        .faq-item { background: var(--card); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+        .faq-q { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; font-weight: 600; font-size: 14px; }
+        .faq-q:hover { background: var(--bg); }
+        .faq-q .icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-light); color: var(--accent); font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; transition: transform .2s; }
+        .faq-item.open .faq-q .icon { transform: rotate(45deg); }
+        .faq-a { display: none; padding: 0 18px 16px; color: var(--muted); font-size: 13px; line-height: 1.8; border-top: 1px solid var(--border); padding-top: 14px; }
+        .faq-item.open .faq-a { display: block; }
+        .faq-a code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-family: Consolas, monospace; font-size: 12px; color: #1e40af; }
+        .faq-a ul { padding-left: 18px; margin-top: 6px; }
+        .faq-a li { margin-bottom: 4px; }
+        .faq-a .tag { display: inline-block; background: var(--accent-light); color: var(--accent); border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-right: 4px; }
+
+        /* 搜尋 */
+        .search-wrap { margin-bottom: 24px; position: relative; }
+        .search-input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; color: var(--text); transition: border-color .15s; }
+        .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(26,86,219,.1); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+        @media(max-width:640px){ .navbar { flex-direction: column; align-items: flex-start; } }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+    <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/salary_dashboard.html">三模型工作台</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html">薪資預測</a>
+        <a href="/salary-url.html">104 面議預測</a>
+        <a href="/faq.html" class="active">專案問答</a>
+    </nav>
+</header>
+
+<div class="page-header">
+    <h1>專案問答 FAQ</h1>
+    <p>關於本研究系統的常見問題，涵蓋資料來源、模型架構、預測方法與使用說明。</p>
+</div>
+
+<div class="container">
+
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="searchInput" placeholder="搜尋問題關鍵字..." oninput="filterFAQ(this.value)">
+    </div>
+
+    <div class="cat-tabs">
+        <button class="cat-tab active" onclick="filterCat('all', this)">全部</button>
+        <button class="cat-tab" onclick="filterCat('data', this)">資料來源</button>
+        <button class="cat-tab" onclick="filterCat('clean', this)">資料清洗</button>
+        <button class="cat-tab" onclick="filterCat('model', this)">模型架構</button>
+        <button class="cat-tab" onclick="filterCat('threemodel', this)">三種模型</button>
+        <button class="cat-tab" onclick="filterCat('predict', this)">預測方法</button>
+        <button class="cat-tab" onclick="filterCat('use', this)">使用說明</button>
+        <button class="cat-tab" onclick="filterCat('limit', this)">研究限制</button>
+    </div>
+
+    <!-- 資料清洗 -->
+    <div class="faq-section" data-cat="clean">
+        <div class="faq-section-title">資料清洗</div>
+
+        <div class="faq-item" data-cat="clean">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>資料清洗流程頁面的用途是什麼？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <strong>資料清洗流程</strong>頁面提供視覺化的完整清洗過程展示，包含：<br>
+                ① 匯入原始 104 CSV 職缺資料<br>
+                ② 欄位轉換前後對照（前 10 筆預覽）<br>
+                ③ 各清洗步驟逐步說明與移除統計<br>
+                ④ 清洗後資料圖表（薪資分布、地區、年資、產業分布）<br>
+                清洗後可直接下載處理完畢的 CSV 供後續建模使用。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="clean">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>清洗時會移除哪些類型的資料？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                清洗規則共分以下類別：
+                <ul>
+                    <li><strong>職稱空值</strong>：職務名稱為空白或全為特殊符號者移除</li>
+                    <li><strong>時薪排除</strong>：薪資型態為「時薪」的職缺不適合月薪預測，整列移除</li>
+                    <li><strong>最低薪資為 0</strong>：salaryMin 為 0 代表資料不完整，移除</li>
+                    <li><strong>Min &gt; Max</strong>：最低薪高於最高薪為資料錯誤，移除</li>
+                    <li><strong>低於基本工資</strong>：低於法定基本工資 27,470 元者移除</li>
+                    <li><strong>高於 500 萬</strong>：薪資超過 500 萬屬異常高值，移除</li>
+                    <li><strong>年薪換算超標</strong>：年薪型態除以 12 後超過 50 萬者移除</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="clean">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>薪資型態欄位（jobSalaryType）有什麼作用？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <code>jobSalaryType</code> 記錄職缺薪資計算方式，常見值包含「月薪」、「年薪」、「時薪」。
+                清洗階段用於：
+                <ul>
+                    <li>「時薪」職缺與月薪預測目標不相容，直接排除</li>
+                    <li>「年薪」職缺換算月薪（÷12）後，若超過 50 萬視為異常排除</li>
+                    <li>「月薪」職缺直接使用 salaryMin / salaryMax 數值</li>
+                </ul>
+                清洗前後的對照表格中可看到每筆資料的薪資型態標示。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="clean">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>上傳大型 CSV 時為何需要等待？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                系統採用純前端 JavaScript 進行 CSV 解析，約每 500 筆讓出一次瀏覽器控制權以避免畫面卡死。
+                3 萬筆左右的資料在一般電腦約需 10–30 秒。<br><br>
+                上傳過程中 overlay 會顯示「<strong>資料上傳中請耐心等候</strong>」並即時更新解析進度，
+                請等待進度完成後再操作頁面。若瀏覽器詢問是否等待，請選擇「等待」。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="clean">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>特徵變數模擬分析頁面是做什麼的？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <strong>特徵變數模擬分析</strong>頁面（catboost_training.html）提供互動式的模型特徵探索：
+                <ul>
+                    <li>調整地區、年資、產業、員工規模等特徵，即時觀察對薪資預測的影響</li>
+                    <li>視覺化 CatBoost 特徵重要性排序</li>
+                    <li>展示模型訓練流程與參數設定說明</li>
+                </ul>
+                適合用於報告簡報時示範「改變哪個條件會讓薪資變化」的直觀解說。
+            </div>
+        </div>
+    </div>
+
+    <!-- 資料來源 -->
+    <div class="faq-section" data-cat="data">
+        <div class="faq-section-title">資料來源</div>
+
+        <div class="faq-item" data-cat="data">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>資料從哪裡取得？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                本研究資料來自 <strong>104 人力銀行</strong>公開職缺頁面，透過 Python 爬蟲（requests + BeautifulSoup）擷取，
+                僅供學術研究用途，不涉及商業應用。資料擷取期間為 2024 年，共收集逾萬筆有效職缺記錄。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="data">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>資料包含哪些欄位？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                主要欄位包括：
+                <ul>
+                    <li><code>jobTitles</code> — 職務名稱</li>
+                    <li><code>jobCategory</code> — 職務類別</li>
+                    <li><code>jobLocationAt</code> — 工作地區</li>
+                    <li><code>jobRqYear</code> — 年資要求</li>
+                    <li><code>jobCompanyIndustry</code> — 公司產業別</li>
+                    <li><code>salaryMin</code> / <code>salaryMax</code> — 月薪最低／最高（目標變數）</li>
+                    <li><code>employeeCount</code> — 公司員工人數</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="data">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>資料如何前處理？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                前處理步驟包括：<br>
+                ① 移除薪資欄位為空白或「面議」的記錄（保留有明確數字的樣本）<br>
+                ② 薪資異常值過濾（低於基本工資或高於 300 萬者排除）<br>
+                ③ 職務名稱文字正規化（去除特殊符號、統一繁體中文）<br>
+                ④ 類別欄位 Label Encoding / Target Encoding<br>
+                ⑤ 職務語意向量化（TF-IDF + K-Means 職務分群）
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="data">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>訓練資料共有多少筆？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                前處理後約有 <strong>數千至萬筆</strong>有效薪資記錄（確切數量可在首頁的「訓練樣本數」查看，
+                系統啟動後由 <code>/health</code> API 即時回傳）。
+            </div>
+        </div>
+    </div>
+
+    <!-- 模型架構 -->
+    <div class="faq-section" data-cat="model">
+        <div class="faq-section-title">模型架構</div>
+
+        <div class="faq-item" data-cat="model">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>使用了哪些預測模型？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                本研究採用三種梯度提升演算法：
+                <ul>
+                    <li><span class="tag">CatBoost</span> — 對類別特徵原生支援，無需手動 One-Hot Encoding</li>
+                    <li><span class="tag">LightGBM</span> — 訓練速度快，適合大規模資料</li>
+                    <li><span class="tag">XGBoost</span> — 穩定性高，廣泛應用於結構化資料競賽</li>
+                </ul>
+                每種模型分別訓練「最低薪」與「最高薪」共兩個子模型，合計 6 個模型。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="model">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>模型的評估指標為何？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                主要使用以下指標評估預測效果：
+                <ul>
+                    <li><code>MAE</code>（平均絕對誤差）— 預測值與實際值差距的平均，單位為新台幣元</li>
+                    <li><code>RMSE</code>（均方根誤差）— 對大誤差更敏感</li>
+                    <li><code>R²</code>（決定係數）— 模型解釋資料變異的比例，越接近 1 越好</li>
+                </ul>
+                首頁顯示的 MAE 為 CatBoost 最高薪模型的測試集表現。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="model">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>什麼是職務分群（job_cluster）？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                職務分群是以 <strong>TF-IDF + K-Means</strong> 對職務名稱與類別文字進行非監督式分群，
+                將職缺歸入數個語意相近的群組（如「軟體工程」、「資料科學」、「業務行銷」等）。
+                分群結果作為模型的額外特徵輸入，有助於提升薪資預測精度。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="model">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>最重要的預測特徵是什麼？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                根據 CatBoost 特徵重要性分析（首頁圖表可查看），
+                影響薪資預測最關鍵的特徵通常為：
+                <ul>
+                    <li>職務類別（<code>jobCategory</code>）</li>
+                    <li>工作年資（<code>jobRqYear</code>）</li>
+                    <li>工作地區（<code>jobLocationAt</code>）</li>
+                    <li>職務分群（<code>job_cluster</code>）</li>
+                    <li>公司員工規模（<code>employeeCount</code>）</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三種模型 -->
+    <div class="faq-section" data-cat="threemodel">
+        <div class="faq-section-title">三種模型</div>
+
+        <div class="faq-item" data-cat="threemodel">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>CatBoost — 什麼是 CatBoost？它有什麼優勢？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <span class="tag">CatBoost</span> 由 Yandex 開發，全名 Categorical Boosting，是一種梯度提升決策樹演算法。<br><br>
+                <strong>主要優勢：</strong>
+                <ul>
+                    <li><strong>原生支援類別特徵</strong>：不需手動 One-Hot Encoding，直接輸入「台北市」、「軟體工程師」等文字欄位，內部自動處理</li>
+                    <li><strong>Ordered Boosting</strong>：使用排列（permutation）技巧降低訓練資料洩漏，減少過擬合</li>
+                    <li><strong>對稱樹結構</strong>：預測速度快，適合部署</li>
+                    <li><strong>本研究主力模型</strong>：特徵重要性分析以 CatBoost 為基準，首頁 MAE 指標亦來自此模型</li>
+                </ul>
+                本研究 CatBoost 分別訓練「最低薪」與「最高薪」兩個子模型。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="threemodel">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>LightGBM — 什麼是 LightGBM？與 CatBoost 有何不同？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <span class="tag">LightGBM</span> 由 Microsoft 開發，採用基於梯度的單邊採樣（GOSS）與互斥特徵捆綁（EFB）技術。<br><br>
+                <strong>主要特點：</strong>
+                <ul>
+                    <li><strong>訓練速度快</strong>：Leaf-wise（葉節點優先）生長策略，比傳統 Level-wise 更快收斂</li>
+                    <li><strong>記憶體效率高</strong>：直方圖演算法大幅降低記憶體用量，適合大規模資料集</li>
+                    <li><strong>需要 Label Encoding</strong>：類別特徵須先轉換為數值，與 CatBoost 原生支援不同</li>
+                    <li><strong>適合資料量大時</strong>：本研究資料量達數萬筆，LightGBM 訓練速度優勢明顯</li>
+                </ul>
+                在三模型工作台中可直接比較 LightGBM 與其他模型的預測差異。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="threemodel">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>XGBoost — 什麼是 XGBoost？為何仍被廣泛使用？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <span class="tag">XGBoost</span>（Extreme Gradient Boosting）由陳天奇開發，是競賽社群長期主流的梯度提升框架。<br><br>
+                <strong>主要特點：</strong>
+                <ul>
+                    <li><strong>穩定可靠</strong>：Level-wise 樹生長策略較保守，泛化能力強，不易過擬合</li>
+                    <li><strong>正規化支援</strong>：內建 L1（Lasso）與 L2（Ridge）正規化，控制模型複雜度</li>
+                    <li><strong>跨平台成熟</strong>：文件豐富、社群支援最廣泛，容易除錯與調參</li>
+                    <li><strong>基準比較價值</strong>：作為最成熟的梯度提升方法，適合與 CatBoost / LightGBM 對比驗證</li>
+                </ul>
+                本研究以 XGBoost 作為對照基準，確認其他兩種模型在薪資預測任務上的相對表現。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="threemodel">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>三個模型的預測結果差異大嗎？以哪個為準？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                三個模型預測結果通常在同一區間內，但細部數字因演算法不同略有差異：
+                <ul>
+                    <li>預測差距在 <strong>5,000–15,000 元</strong>以內屬正常範圍</li>
+                    <li>若三者差距過大（&gt;3 萬），通常代表該職務在訓練資料中樣本偏少</li>
+                    <li><strong>建議以 CatBoost 為主要參考</strong>，因其對本資料集的類別特徵處理最自然</li>
+                    <li>三模型工作台（<code>salary_dashboard.html</code>）可同時對比三者輸出，供使用者自行判斷</li>
+                </ul>
+                模型驗證頁面提供各模型的 MAE / RMSE / R² 指標，可作為選擇依據。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="threemodel">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>為什麼每種模型要分別訓練最低薪與最高薪？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                104 職缺薪資以「區間」呈現（例如 50,000–80,000 元），最低薪與最高薪的影響因素與分布不完全相同：
+                <ul>
+                    <li><strong>最低薪</strong>：較受法定基本工資、公司薪酬下限政策影響，分布較集中</li>
+                    <li><strong>最高薪</strong>：受職務天花板、經驗加成、績效彈性影響，分布更分散</li>
+                </ul>
+                分開訓練讓每個子模型專注優化單一目標，整體比單一模型同時預測區間的方式更準確。
+                合計三模型 × 兩個子模型 = <strong>共 6 個模型</strong>。
+            </div>
+        </div>
+    </div>
+
+    <!-- 預測方法 -->
+    <div class="faq-section" data-cat="predict">
+        <div class="faq-section-title">預測方法</div>
+
+        <div class="faq-item" data-cat="predict">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>輸入職務名稱後，模型如何處理？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                系統處理流程如下：<br>
+                ① 將職務名稱與勾選的職務類別合併為 <code>job_text</code> 字串<br>
+                ② 以訓練時的 TF-IDF 向量器轉換為數值向量<br>
+                ③ 透過已訓練的 K-Means 模型找出最近的職務分群<br>
+                ④ 結合地區、年資、產業等特徵組成完整輸入向量<br>
+                ⑤ 輸入 CatBoost 模型，輸出最低薪與最高薪預測值
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="predict">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>104 面議薪資預測（salary-url）如何運作？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                使用者貼上 104 職缺網址後，系統步驟為：<br>
+                ① 後端呼叫 <code>/predict-url</code> API，爬取該職缺頁面結構化資料<br>
+                ② 自動解析職務名稱、地區、年資要求等欄位<br>
+                ③ 帶入三個模型（CatBoost / LightGBM / XGBoost）分別預測<br>
+                ④ 回傳各模型的薪資區間，供使用者參考比較<br><br>
+                <strong>注意：</strong>面議職缺因無公開薪資數字，預測結果為模型估算，不代表公司實際核薪。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="predict">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>「職務類別建議」是怎麼產生的？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                當使用者輸入職務名稱後，前端呼叫 <code>/related-categories</code> API，
+                後端以 TF-IDF 相似度計算，從訓練資料中的職務類別找出語意最相近的前 12 個類別，
+                回傳給使用者勾選確認，以精準控制模型的 <code>jobCategory</code> 輸入。
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用說明 -->
+    <div class="faq-section" data-cat="use">
+        <div class="faq-section-title">使用說明</div>
+
+        <div class="faq-item" data-cat="use">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>如何啟動本系統？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                系統由一個靜態 HTTP 伺服器提供所有頁面：
+                <ul>
+                    <li>進入專案目錄 <code>SPA Model/</code></li>
+                    <li>執行 <code>python salary_server.py</code></li>
+                    <li>瀏覽器開啟 <code>http://127.0.0.1:5001</code> 即可使用</li>
+                </ul>
+                若需外網存取，可搭配 <code>ngrok http 5001</code> 建立公開連結。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="use">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>「選填欄位」要不要填？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                選填欄位（公司產業別、招募部門、員工人數等）<strong>不填也能預測</strong>，
+                系統會帶入 <code>Unknown</code> 或 <code>0</code> 作為預設值。
+                但根據特徵重要性分析，補充公司資訊可適度提升預測精度，建議盡量填寫。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="use">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>各頁面功能說明</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                <ul>
+                    <li><span class="tag">研究報告</span> 本研究簡報投影片展示</li>
+                    <li><span class="tag">資料清洗流程</span> 匯入 CSV、視覺化清洗過程與結果圖表、下載淨化後資料</li>
+                    <li><span class="tag">特徵變數模擬分析</span> 調整特徵即時觀察薪資影響、CatBoost 訓練說明</li>
+                    <li><span class="tag">三模型工作台</span> 同時輸出 CatBoost / LightGBM / XGBoost 預測結果對照</li>
+                    <li><span class="tag">模型驗證</span> 各模型測試集 MAE / RMSE / R² 指標比較</li>
+                    <li><span class="tag">薪資預測</span> 單一職缺薪資預測，含地區薪資分布與特徵重要性圖表</li>
+                    <li><span class="tag">104 面議預測</span> 貼上職缺網址自動爬取資料並三模型同步預測</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 研究限制 -->
+    <div class="faq-section" data-cat="limit">
+        <div class="faq-section-title">研究限制</div>
+
+        <div class="faq-item" data-cat="limit">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>預測結果準確嗎？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                模型預測結果具有統計意義，但存在以下限制：
+                <ul>
+                    <li>薪資受個人談判能力、面試表現等非結構化因素影響，模型無法捕捉</li>
+                    <li>資料為某段時間的快照，不反映最新市場行情</li>
+                    <li>面議職缺本身薪資範圍廣，預測區間較大</li>
+                    <li>小眾職類樣本數不足，預測精度相對較低</li>
+                </ul>
+                預測結果應作為<strong>參考區間</strong>使用，不宜作為唯一決策依據。
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="limit">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>資料是否有偏差（Bias）？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                存在以下潛在偏差：
+                <ul>
+                    <li><strong>樣本偏差</strong>：僅涵蓋公開職缺，內部晉升或獵頭職缺未計入</li>
+                    <li><strong>薪資揭露偏差</strong>：願意公開薪資的職缺可能集中於特定產業或規模</li>
+                    <li><strong>地區偏差</strong>：台北市樣本比例遠高於其他縣市</li>
+                    <li><strong>職類偏差</strong>：科技、資訊相關職缺佔比較高</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="faq-item" data-cat="limit">
+            <div class="faq-q" onclick="toggle(this.parentElement)">
+                <span>本系統可以商業使用嗎？</span><span class="icon">+</span>
+            </div>
+            <div class="faq-a">
+                本系統為<strong>學術研究專題</strong>，所有資料爬取僅供研究分析用途。
+                若需商業應用，應洽 104 人力銀行官方 API，並遵守其服務條款。
+                本研究不對任何依據本系統預測結果所做的薪資決策負責。
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggle(item) {
+        item.classList.toggle('open');
+    }
+
+    function filterCat(cat, btn) {
+        document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.faq-section').forEach(sec => {
+            if (cat === 'all' || sec.dataset.cat === cat) {
+                sec.style.display = '';
+            } else {
+                sec.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.faq-item').forEach(item => {
+            if (cat === 'all' || item.dataset.cat === cat) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function filterFAQ(keyword) {
+        const kw = keyword.trim().toLowerCase();
+        document.querySelectorAll('.faq-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = (!kw || text.includes(kw)) ? '' : 'none';
+        });
+        document.querySelectorAll('.faq-section').forEach(sec => {
+            const visible = Array.from(sec.querySelectorAll('.faq-item')).some(i => i.style.display !== 'none');
+            sec.style.display = visible ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <title>lightgbm_max salary model report</title>
+  <style>
+    body { font-family: "Microsoft JhengHei", Arial, sans-serif; margin: 32px; color: #222; }
+    h1 { margin-bottom: 8px; }
+    .metrics { display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0; }
+    .metric { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; min-width: 150px; }
+    .metric strong { display: block; font-size: 24px; margin-top: 4px; }
+    img { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; }
+    section { margin: 28px 0; }
+    code { white-space: pre-wrap; }
+    .back-link { position: fixed; top: 16px; right: 16px; z-index: 20; padding: 10px 14px; border: 1px solid #fb923c; border-radius: 4px; background: #fff7ed; color: #c2410c; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08); }
+    .back-link:hover { background: #f97316; border-color: #f97316; color: #fff; }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../../salary_dashboard.html">薪資預測工作台</a>
+  <h1>lightgbm_max Salary Model Report</h1>
+  <div class="metrics">
+    <div class="metric">MAE<strong>10,861.57</strong></div>
+    <div class="metric">RMSE<strong>19,763.55</strong></div>
+    <div class="metric">R2<strong>0.4167</strong></div>
+    <div class="metric">MAPE<strong>16.78%</strong></div>
+    <div class="metric">Error <= 25%<strong>76.06%</strong></div>
+  </div>
+  <h2>Best Parameters</h2>
+  <code>{&#x27;objective&#x27;: &#x27;regression_l1&#x27;, &#x27;metric&#x27;: &#x27;mae&#x27;, &#x27;verbose&#x27;: -1, &#x27;num_leaves&#x27;: 63, &#x27;learning_rate&#x27;: 0.1, &#x27;n_estimators&#x27;: 250, &#x27;max_depth&#x27;: -1, &#x27;random_state&#x27;: 42}</code>
+  <section><h2>lightgbm_max_salary_distribution</h2><img src="lightgbm_max_salary_distribution.png" alt="lightgbm_max_salary_distribution"></section>
+<section><h2>lightgbm_max_prediction_comparison</h2><img src="lightgbm_max_prediction_comparison.png" alt="lightgbm_max_prediction_comparison"></section>
+<section><h2>lightgbm_max_feature_importance</h2><img src="lightgbm_max_feature_importance.png" alt="lightgbm_max_feature_importance"></section>
+<section><h2>lightgbm_max_top_tokens</h2><img src="lightgbm_max_top_tokens.png" alt="lightgbm_max_top_tokens"></section>
+</body>
+</html>
+
+
+

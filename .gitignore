@@ -1,0 +1,26 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+server_5001.*.log
+
+# Local training data and generated model artifacts
+data/
+outputs/logs/
+outputs/trained_models/*
+!outputs/trained_models/README.md
+*.csv
+*.joblib
+*.pkl
+*.cbm
+
+# Local backup / obsolete files
+*.bak*
+public/index50011.html
+public/index.html.bak_*
+
+# Secrets / environment
+.env
+.env.*
+_private/

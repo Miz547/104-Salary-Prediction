@@ -1,0 +1,542 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 薪資預測模型研究系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --accent: #1a56db;
+            --accent-light: #e8f0fe;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; }
+        body { margin:0; padding:0; font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; background:var(--bg); color:var(--text); font-size:14px; line-height:1.6; }
+
+        /* ── 導覽列 ── */
+        .navbar { background: #1e293b; padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+        .navbar-brand span { color: #93c5fd; }
+        .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+        .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+        .navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+        .nav-status { font-size:11px; color:#64748b; white-space:nowrap; }
+
+        /* ── 研究說明橫幅 ── */
+        .research-banner {
+            background:#fff; border-bottom:1px solid var(--border);
+            padding:16px 32px;
+            display:flex; align-items:flex-start; gap:24px; flex-wrap:wrap;
+        }
+        .research-meta { flex:1; min-width:260px; }
+        .research-meta h2 { margin:0 0 6px; font-size:15px; font-weight:700; color:var(--text); }
+        .research-meta p  { margin:0; font-size:12px; color:var(--muted); line-height:1.7; }
+        .research-stats { display:flex; gap:20px; flex-wrap:wrap; align-items:center; }
+        .stat-item { text-align:center; }
+        .stat-num  { font-size:18px; font-weight:700; color:var(--accent); display:block; }
+        .stat-lbl  { font-size:11px; color:var(--muted); }
+
+        /* ── 主體 ── */
+        .container { max-width:1200px; margin:28px auto; padding:0 24px; display:grid; grid-template-columns:340px 1fr; gap:24px; }
+
+        /* ── 卡片 ── */
+        .card { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:22px; }
+        .card-title { font-size:14px; font-weight:700; margin:0 0 18px; padding-bottom:10px; border-bottom:1px solid var(--border); color:var(--text); display:flex; align-items:center; gap:8px; }
+        .card-title::before { content:''; display:inline-block; width:3px; height:14px; background:var(--accent); border-radius:2px; }
+
+        /* ── 表單 ── */
+        .form-group { margin-bottom:16px; }
+        .form-group label { display:block; margin-bottom:6px; font-size:12px; font-weight:600; color:var(--muted); }
+        .form-control { width:100%; padding:9px 10px; border:1px solid var(--border); border-radius:4px; font-size:13px; background:#fff; color:var(--text); transition:border-color .15s; }
+        textarea.form-control { min-height:72px; resize:vertical; line-height:1.5; }
+        .form-control:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(26,86,219,.1); }
+
+        .optional-section { border:1px solid var(--border); border-radius:4px; padding:12px 14px; margin-bottom:16px; }
+        .optional-toggle { font-size:12px; color:var(--muted); cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; }
+        .optional-toggle:hover { color:var(--accent); }
+        .optional-fields { display:none; margin-top:12px; }
+        .optional-fields.open { display:block; }
+
+        .btn-predict { width:100%; padding:11px; background:var(--accent); border:none; color:#fff; font-size:14px; font-weight:700; border-radius:4px; cursor:pointer; transition:.15s; margin-top:8px; letter-spacing:.3px; }
+        .btn-predict:hover { background:#1d4ed8; }
+        .btn-predict:disabled { opacity:.6; cursor:wait; }
+        .btn-analyze { width:100%; padding:8px; background:#fff; border:1px solid var(--border); color:var(--muted); font-size:12px; font-weight:600; border-radius:4px; cursor:pointer; transition:.15s; margin-top:8px; }
+        .btn-analyze:hover { border-color:var(--accent); color:var(--accent); }
+
+        /* ── 預測結果 ── */
+        .result-panel { display:none; margin-top:16px; background:var(--accent-light); border:1px solid #bfdbfe; border-radius:6px; padding:18px; text-align:center; }
+        .result-label { font-size:11px; color:var(--muted); margin-bottom:4px; }
+        .result-range { font-size:24px; font-weight:700; color:var(--accent); margin:6px 0; }
+        .result-sub   { font-size:12px; color:var(--muted); line-height:1.7; margin-top:6px; }
+
+        /* ── 職務類別 ── */
+        .category-suggestions { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+        .category-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border:1px solid var(--border); border-radius:4px; background:#fff; font-size:12px; color:var(--text); cursor:pointer; }
+        .category-chip input { accent-color:var(--accent); }
+
+        /* ── 語意面板 ── */
+        .semantic-panel { margin-top:14px; border:1px solid var(--border); background:var(--bg); border-radius:4px; padding:12px; }
+        .semantic-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+        .semantic-metric { background:#fff; border:1px solid var(--border); border-radius:4px; padding:8px; }
+        .semantic-label { font-size:11px; color:var(--muted); margin-bottom:4px; }
+        .semantic-value { font-size:13px; color:var(--text); font-weight:700; word-break:break-word; }
+        .job-text-box { background:#1e293b; color:#e2e8f0; padding:10px 12px; border-radius:4px; font-size:12px; font-family:Consolas,monospace; word-break:break-word; line-height:1.6; }
+        .hint { font-size:11px; color:var(--muted); line-height:1.5; margin-top:6px; }
+        .error { color:#dc2626; }
+
+        /* ── 快速導覽 ── */
+        .quick-nav { margin-top:20px; border-top:1px solid var(--border); padding-top:16px; }
+        .quick-nav-title { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; margin-bottom:10px; }
+        .quick-links { display:flex; flex-direction:column; gap:6px; }
+        .quick-link { display:block; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:4px; font-size:12px; font-weight:600; color:var(--text); text-decoration:none; transition:.15s; }
+        .quick-link:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+
+        /* ── 圖表 ── */
+        .charts-column { display:flex; flex-direction:column; gap:20px; }
+        .chart-box { min-height:380px; width:100%; margin-top:12px; }
+        .chart-btn-reset { float:right; margin-top:-40px; background:#1e293b; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:11px; display:none; }
+        .chart-btn-reset:hover { background:var(--accent); }
+
+        /* ── fallback 條形圖 ── */
+        .fallback-bars { display:flex; flex-direction:column; gap:8px; padding-top:8px; }
+        .fallback-row { display:grid; grid-template-columns:minmax(90px,160px) 1fr minmax(70px,auto); gap:8px; align-items:center; font-size:12px; }
+        .fallback-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+        .fallback-track { height:12px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+        .fallback-fill  { height:100%; min-width:3px; background:var(--accent); border-radius:3px; }
+        .fallback-value { color:var(--muted); text-align:right; white-space:nowrap; }
+
+        /* ── 資料來源說明 ── */
+        .source-note { background:#fff; border:1px solid var(--border); border-radius:6px; padding:16px 20px; margin:0 auto 32px; max-width:1200px; margin-left:24px; margin-right:24px; }
+        .source-note p { margin:0; font-size:12px; color:var(--muted); line-height:1.8; }
+        .source-note strong { color:var(--text); }
+
+        @media(max-width:900px){
+            .navbar { flex-direction:column; align-items:flex-start; }
+            .container { grid-template-columns:1fr; }
+            .semantic-grid { grid-template-columns:1fr; }
+            .research-banner { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+    <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/salary_dashboard.html">三模型工作台</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html" class="active">薪資預測</a>
+        <a href="/salary-url.html">104 面議預測</a>
+        <a href="/faq.html">專案問答</a>
+    </nav>
+</header>
+<span id="serverStatus" style="display:none"></span>
+
+<!-- 研究說明 -->
+<div class="research-banner">
+    <div class="research-meta">
+        <h2>104 人力銀行薪資資料機器學習預測研究</h2>
+        <p>
+            本研究以 104 人力銀行公開職缺資料為基礎，採用 CatBoost、LightGBM、XGBoost 等梯度提升演算法，
+            建立薪資預測模型。輸入職務名稱、地區、年資等特徵，模型即時輸出預估月薪區間，
+            並提供特徵重要性分析與地區薪資分布等視覺化結果。
+        </p>
+    </div>
+    <div class="research-stats">
+        <div class="stat-item">
+            <span class="stat-num" id="stat-rows">—</span>
+            <span class="stat-lbl">訓練樣本數</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num">3</span>
+            <span class="stat-lbl">預測模型</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num" id="stat-mae">—</span>
+            <span class="stat-lbl">CatBoost MAE</span>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- 左欄：輸入表單 -->
+    <div class="card" style="height:fit-content;">
+        <div class="card-title">預測參數輸入</div>
+
+        <div class="form-group">
+            <label>工作地區（jobLocationAt）</label>
+            <select id="ipt_loc" class="form-control"></select>
+        </div>
+
+        <div class="form-group">
+            <label>職務名稱 / 職務描述（jobTitles）</label>
+            <textarea id="ipt_title" class="form-control" placeholder="例如：後端工程師 Python API、AI 工程師、資料分析師"></textarea>
+            <button type="button" class="btn-analyze" onclick="updateSemanticPreview()">語意分析職務類別</button>
+        </div>
+
+        <div class="form-group">
+            <label>職務類別建議（jobCategory）— 可多選，合併作為模型輸入特徵</label>
+            <div id="categorySuggestions" class="category-suggestions"></div>
+        </div>
+
+        <div class="semantic-panel">
+            <div class="semantic-grid">
+                <div class="semantic-metric">
+                    <div class="semantic-label">已勾選類別數</div>
+                    <div class="semantic-value" id="selectedCount">0</div>
+                </div>
+                <div class="semantic-metric">
+                    <div class="semantic-label">模型職務分群</div>
+                    <div class="semantic-value" id="clusterPreview">預測後顯示</div>
+                </div>
+                <div class="semantic-metric">
+                    <div class="semantic-label">CatBoost MAE（最高薪）</div>
+                    <div class="semantic-value" id="maePreview">—</div>
+                </div>
+            </div>
+            <div class="semantic-label" style="margin-bottom:6px;">模型實際接收之職務語意向量（job_text）</div>
+            <div class="job-text-box" id="jobTextPreview">請輸入職務描述並勾選職務類別</div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+            <label>工作年資要求（experience_band）</label>
+            <select id="ipt_exp" class="form-control"></select>
+        </div>
+
+        <div class="optional-section">
+            <div class="optional-toggle" onclick="toggleOptional(this)">
+                ▶ 選填：公司資訊（可提升預測精度）
+            </div>
+            <div class="optional-fields">
+                <div class="form-group" style="margin-top:12px;">
+                    <label>搜尋關鍵字（keyword）</label>
+                    <input type="text" id="ipt_keyword" class="form-control" placeholder="例如：Python、機器學習、雲端">
+                </div>
+                <div class="form-group">
+                    <label>公司產業別（jobCompanyIndustry）</label>
+                    <input type="text" id="ipt_industry" class="form-control" placeholder="例如：資訊科技業、電商、半導體">
+                </div>
+                <div class="form-group">
+                    <label>招募部門（jobRqDepartment）</label>
+                    <input type="text" id="ipt_dept" class="form-control" placeholder="例如：研發部、資訊部">
+                </div>
+                <div class="form-group">
+                    <label>公司員工人數（employeeCount）</label>
+                    <input type="text" id="ipt_emp" class="form-control" placeholder="例如：100、500、1000">
+                </div>
+            </div>
+        </div>
+
+        <button id="predictBtn" class="btn-predict" onclick="calculateAiPrediction()">執行薪資預測</button>
+
+        <div class="result-panel" id="res_panel">
+            <div class="result-label">CatBoost 預估月薪區間</div>
+            <div class="result-range" id="res_val">NT$ --,--- ~ NT$ --,---</div>
+            <div class="result-sub" id="res_meta"></div>
+        </div>
+
+        <div class="quick-nav">
+            <div class="quick-nav-title">相關研究模組</div>
+            <div class="quick-links">
+                <a href="salary_dashboard.html" class="quick-link">三模型薪資預測比較工作台</a>
+                <a href="catboost_training.html" class="quick-link">特徵變數模擬分析</a>
+                <a href="/validation/salary_validation_admin_dashboard.html" class="quick-link">模型驗證儀表板</a>
+                <a href="/faq.html" class="quick-link">專案問答</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右欄：圖表 -->
+    <div class="charts-column">
+        <div class="card">
+            <div class="card-title">各地區平均薪資分布</div>
+            <div id="chart2" class="chart-box"></div>
+        </div>
+        <div class="card">
+            <div class="card-title" id="chart1_title">職務類別薪資熱力圖（Top 20）</div>
+            <button id="btn_reset_c1" class="chart-btn-reset" onclick="renderSalaryHeatmap()">返回熱力圖</button>
+            <div id="chart1" class="chart-box" style="min-height:500px;"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">特徵重要性分析（CatBoost — 最高薪模型）</div>
+            <div id="chart3" class="chart-box" style="min-height:300px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 資料來源說明 -->
+<div style="max-width:1200px;margin:0 24px 40px;">
+    <div class="source-note">
+        <p>
+            <strong>資料來源：</strong>104 人力銀行公開職缺頁面（爬蟲擷取，僅供學術研究用途）．
+            <strong>模型：</strong>CatBoost、LightGBM、XGBoost（scikit-learn 梯度提升框架）．
+            <strong>目標變數：</strong>職缺最低月薪（salaryMin）及最高月薪（salaryMax）．
+            <strong>評估指標：</strong>MAE（平均絕對誤差）、RMSE、R²．
+            本系統為專題研究展示用途，預測結果不代表任何公司之實際核薪標準。
+        </p>
+    </div>
+</div>
+
+<script>
+    let healthData=null, optionsData=null, statsData=null;
+    let c1=null, c2=null, c3=null, analyzeTimer=null;
+
+    function money(v){ return 'NT$ '+Math.round(Number(v)).toLocaleString(); }
+
+    function fillSelect(id, values){
+        const sel=document.getElementById(id);
+        sel.innerHTML='';
+        values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+    }
+
+    function toggleOptional(el){
+        const fields=el.nextElementSibling;
+        const open=fields.classList.toggle('open');
+        el.textContent=(open?'▼':'▶')+' 選填：公司資訊（可提升預測精度）';
+    }
+
+    function getSelectedCategories(){
+        return Array.from(document.querySelectorAll('#categorySuggestions input:checked')).map(i=>i.value);
+    }
+
+    function syncJobTextPreview(){
+        const title=document.getElementById('ipt_title').value.trim();
+        const cats=getSelectedCategories();
+        document.getElementById('selectedCount').innerText=cats.length;
+        document.getElementById('jobTextPreview').innerText=
+            [title,cats.join(',')].filter(Boolean).join(' | ')||'請輸入職務描述並勾選職務類別';
+    }
+
+    function renderCategoryCheckboxes(categories){
+        const wrap=document.getElementById('categorySuggestions');
+        wrap.innerHTML='';
+        categories.forEach((cat,idx)=>{
+            const label=document.createElement('label');
+            label.className='category-chip';
+            const inp=document.createElement('input');
+            inp.type='checkbox'; inp.value=cat;
+            inp.checked=idx<Math.min(3,categories.length);
+            inp.addEventListener('change',()=>{ syncJobTextPreview(); renderSelectedCategoryChart(); });
+            label.append(inp,document.createTextNode(cat));
+            wrap.appendChild(label);
+        });
+        syncJobTextPreview();
+        renderSelectedCategoryChart();
+    }
+
+    async function updateSemanticPreview(){
+        const title=document.getElementById('ipt_title').value.trim();
+        clearTimeout(analyzeTimer);
+        if(!title){ renderCategoryCheckboxes((optionsData?.categories||[]).slice(0,8)); return; }
+        const params=new URLSearchParams({limit:'12',title});
+        const resp=await fetch('/related-categories?'+params.toString());
+        if(!resp.ok) throw new Error('related-categories HTTP '+resp.status);
+        const data=await resp.json();
+        renderCategoryCheckboxes(data.categories||[]);
+    }
+
+    function scheduleAnalyze(){
+        clearTimeout(analyzeTimer);
+        analyzeTimer=setTimeout(()=>updateSemanticPreview().catch(showError),350);
+    }
+
+    function showError(err){
+        document.getElementById('serverStatus').innerHTML='<span class="error">模型服務錯誤</span>';
+        document.getElementById('res_panel').style.display='block';
+        document.getElementById('res_val').innerText='預測失敗';
+        document.getElementById('res_meta').innerText=err.message;
+    }
+
+    async function calculateAiPrediction(){
+        const title=document.getElementById('ipt_title').value.trim();
+        const cats=getSelectedCategories();
+        if(!title){ alert('請輸入職務名稱 / 職務描述'); return; }
+        if(!cats.length){ alert('請至少勾選一個職務類別'); return; }
+
+        const payload={
+            jobLocationAt:     document.getElementById('ipt_loc').value,
+            jobTitles:         title,
+            jobCategory:       cats.join(','),
+            jobRqYear:         document.getElementById('ipt_exp').value,
+            keyword:           document.getElementById('ipt_keyword').value.trim()||'Unknown',
+            jobCompanyIndustry:document.getElementById('ipt_industry').value.trim()||'Unknown',
+            jobRqDepartment:   document.getElementById('ipt_dept').value.trim()||'Unknown',
+            employeeCount:     document.getElementById('ipt_emp').value.trim()||'0',
+        };
+
+        const btn=document.getElementById('predictBtn');
+        btn.disabled=true; btn.innerText='模型運算中...';
+        try {
+            const resp=await fetch('/predict',{method:'POST',
+                headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            if(!resp.ok) throw new Error('predict HTTP '+resp.status);
+            const r=await resp.json();
+
+            document.getElementById('res_panel').style.display='block';
+            document.getElementById('res_val').innerText=r.predicted_salary_text;
+            document.getElementById('clusterPreview').innerText=r.features.job_cluster_label;
+            document.getElementById('res_meta').innerText=
+                `地區：${r.features.clean_location}　職務分群：${r.features.job_cluster_label}　年資段：${r.features.experience_band}`;
+        } catch(err){ showError(err); }
+        finally{ btn.disabled=false; btn.innerText='執行薪資預測'; }
+    }
+
+    function ensureCharts(){
+        if(!window.echarts) return false;
+        if(!c1) c1=echarts.init(document.getElementById('chart1'));
+        if(!c2) c2=echarts.init(document.getElementById('chart2'));
+        if(!c3) c3=echarts.init(document.getElementById('chart3'));
+        return true;
+    }
+
+    function renderFallbackBars(elementId,entries,opts={}){
+        const el=document.getElementById(elementId);
+        const max=Math.max(...entries.map(e=>Number(e[1])),1);
+        el.innerHTML='<div class="fallback-bars"></div>';
+        const wrap=el.querySelector('.fallback-bars');
+        entries.forEach(([label,value])=>{
+            const row=document.createElement('div'); row.className='fallback-row';
+            row.innerHTML=`<div class="fallback-label" title="${label}">${label}</div>
+                <div class="fallback-track"><div class="fallback-fill" style="width:${Math.max(4,Number(value)/max*100)}%;background:${opts.color||'#1a56db'}"></div></div>
+                <div class="fallback-value">${opts.percent?value+'%':money(value)}</div>`;
+            wrap.appendChild(row);
+        });
+    }
+
+    function renderSalaryHeatmap(){
+        if(!statsData) return;
+        document.getElementById('chart1_title').innerText='職務類別薪資熱力圖（Top 20 × 最低／平均／最高薪）';
+        document.getElementById('btn_reset_c1').style.display='none';
+
+        const catEntries=Object.entries(statsData.category_stats)
+            .filter(([,d])=>d.count>=3)
+            .sort((a,b)=>b[1].mean-a[1].mean)
+            .slice(0,20);
+
+        if(!catEntries.length) return;
+        if(!ensureCharts()){ renderFallbackBars('chart1',catEntries.map(([k,v])=>[k,v.mean])); return; }
+
+        const yLabels=catEntries.map(([k])=>k);
+        const xLabels=['最低薪','平均薪','最高薪'];
+        const fields=['min','mean','max'];
+        const heatData=[];
+        catEntries.forEach(([,d],yi)=>{ fields.forEach((f,xi)=>{ heatData.push([xi,yi,d[f]]); }); });
+        const allVals=catEntries.flatMap(([,d])=>[d.min,d.mean,d.max]);
+        const minVal=Math.min(...allVals), maxVal=Math.max(...allVals);
+
+        c1.setOption({
+            tooltip:{
+                trigger:'item',
+                formatter:p=>{
+                    const cat=yLabels[p.data[1]];
+                    const stat=catEntries.find(([k])=>k===cat)?.[1]||{};
+                    return `<b>${cat}</b><br>最低薪：${money(stat.min)}<br>平均薪：<b>${money(stat.mean)}</b><br>最高薪：${money(stat.max)}<br>樣本數：${stat.count} 筆`;
+                }
+            },
+            grid:{left:'26%',right:'10%',top:'4%',bottom:'14%'},
+            xAxis:{type:'category',data:xLabels,splitArea:{show:true},axisLabel:{fontSize:12,fontWeight:'bold'}},
+            yAxis:{type:'category',data:yLabels,splitArea:{show:true},axisLabel:{fontSize:11,formatter:v=>v.length>12?v.slice(0,12)+'…':v}},
+            visualMap:{
+                min:minVal,max:maxVal,calculable:true,orient:'horizontal',left:'center',bottom:'2%',
+                inRange:{color:['#eff6ff','#93c5fd','#3b82f6','#1e40af']},
+                text:[money(maxVal),money(minVal)],textStyle:{fontSize:11,color:'#555'}
+            },
+            series:[{type:'heatmap',data:heatData,
+                label:{show:true,fontSize:11,formatter:p=>Math.round(p.data[2]/1000)+'k'},
+                emphasis:{itemStyle:{shadowBlur:8,shadowColor:'rgba(0,0,0,.2)'}}}]
+        },true);
+    }
+
+    function renderSelectedCategoryChart(){
+        if(!statsData) return;
+        const sel=getSelectedCategories().find(c=>statsData.category_stats[c]);
+        if(!sel){ renderSalaryHeatmap(); return; }
+        const data=statsData.category_stats[sel];
+        document.getElementById('chart1_title').innerText=`職缺類別明細：${sel}`;
+        document.getElementById('btn_reset_c1').style.display='block';
+        if(!ensureCharts()){ renderFallbackBars('chart1',[['最低月薪',data.min],['平均月薪',data.mean],['最高月薪',data.max]]); return; }
+        c1.setOption({
+            tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+            xAxis:{type:'category',data:['最低月薪','平均月薪','最高月薪']},
+            yAxis:{type:'value',name:'月薪（元）'},
+            series:[{name:sel,type:'bar',
+                data:[{value:data.min,itemStyle:{color:'#93c5fd'}},
+                      {value:data.mean,itemStyle:{color:'#3b82f6'}},
+                      {value:data.max,itemStyle:{color:'#1e40af'}}],
+                label:{show:true,position:'top',formatter:p=>money(p.value)}}]
+        },true);
+    }
+
+    function renderChart2(){
+        if(!statsData) return;
+        const entries=Object.entries(statsData.loc_stats);
+        if(!ensureCharts()){ renderFallbackBars('chart2',entries,{color:'#3b82f6'}); return; }
+        c2.setOption({
+            tooltip:{trigger:'axis',formatter:p=>`${p[0].name}<br>${money(p[0].value)}`},
+            grid:{left:'10%',right:'6%',bottom:'12%'},
+            xAxis:{type:'category',data:entries.map(e=>e[0])},
+            yAxis:{type:'value',name:'平均月薪（元）'},
+            series:[{name:'平均月薪',type:'line',data:entries.map(e=>e[1]),
+                itemStyle:{color:'#3b82f6'},lineStyle:{width:2},
+                symbolSize:6,areaStyle:{color:'rgba(59,130,246,.1)'}}]
+        },true);
+    }
+
+    function renderChart3(){
+        if(!statsData) return;
+        const weights=Object.entries(statsData.feature_weights).sort((a,b)=>a[1]-b[1]);
+        if(!ensureCharts()){ renderFallbackBars('chart3',weights,{color:'#1e293b',percent:true}); return; }
+        c3.setOption({
+            tooltip:{trigger:'axis',formatter:'{b}: {c}%'},
+            grid:{left:'28%',right:'10%',top:'5%',bottom:'10%'},
+            xAxis:{type:'value',name:'重要性（%）'},
+            yAxis:{type:'category',data:weights.map(w=>w[0])},
+            series:[{type:'bar',data:weights.map(w=>w[1]),
+                itemStyle:{color:new echarts.graphic.LinearGradient(0,0,1,0,[
+                    {offset:0,color:'#93c5fd'},{offset:1,color:'#1e40af'}])},
+                label:{show:true,position:'right',formatter:'{c}%'}}]
+        },true);
+    }
+
+    async function loadInitialData(){
+        const [hR,oR,sR]=await Promise.all([fetch('/health'),fetch('/options'),fetch('/stats')]);
+        healthData=await hR.json();
+        optionsData=await oR.json();
+        statsData=await sR.json();
+
+        const rows = healthData.trained_rows?.toLocaleString() || '—';
+        document.getElementById('serverStatus').innerText=`模型就緒｜訓練樣本 ${rows} 筆`;
+        document.getElementById('stat-rows').innerText=rows;
+
+        const cbMaxMae=healthData.mae?.catboost_max;
+        const maeText=cbMaxMae!==undefined?money(cbMaxMae):'—';
+        document.getElementById('maePreview').innerText=maeText;
+        document.getElementById('stat-mae').innerText=maeText;
+
+        fillSelect('ipt_loc',optionsData.locations);
+        fillSelect('ipt_exp',optionsData.experience_bands);
+        const expSel=document.getElementById('ipt_exp');
+        const idx=optionsData.experience_bands.indexOf('3~5年');
+        if(idx>=0) expSel.selectedIndex=idx;
+
+        document.getElementById('ipt_title').value='AI 工程師 Python 資料分析';
+        renderSalaryHeatmap();
+        renderChart2();
+        renderChart3();
+        await updateSemanticPreview();
+    }
+
+    document.getElementById('ipt_title').addEventListener('input',()=>{ syncJobTextPreview(); scheduleAnalyze(); });
+    window.onload=function(){ loadInitialData().catch(showError); };
+    window.onresize=function(){ if(c1)c1.resize(); if(c2)c2.resize(); if(c3)c3.resize(); };
+</script>
+</body>
+</html>

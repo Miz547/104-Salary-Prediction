@@ -1,0 +1,193 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>薪資模型外部驗證 - Admin Dashboard Concept</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f8fb;color:#1f2937;font-family:"Segoe UI","Microsoft JhengHei",sans-serif}.app{display:grid;grid-template-columns:238px 1fr;min-height:100vh}
+.side{background:#111827;color:#d1d5db;padding:20px 15px;position:relative}.brand{display:flex;align-items:center;gap:11px;padding:2px 7px 20px;border-bottom:1px solid #293241;color:#fff;font-size:18px;font-weight:700}.brand i{width:38px;height:38px;border-radius:50%;background:#3b82f6;display:grid;place-items:center;font-style:normal}
+.group{margin-top:22px}.group small{padding:0 10px;color:#6b7280;font-size:10px;font-weight:700;letter-spacing:.1em}.nav{margin-top:7px;display:grid;gap:5px}.nav div{padding:11px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:.2s}.nav div:hover{background:#1f2937;color:#fff;transform:translateX(3px)}.nav .active{background:#2563eb;color:white}.nav span{display:inline-block;width:25px;color:#94a3b8}.nav .active span{color:#fff}
+.version{position:absolute;bottom:22px;left:20px;right:20px;padding:13px;border:1px solid #293241;border-radius:10px;font-size:10px;color:#94a3b8;line-height:1.6}.version b{color:#fff}
+.main{min-width:0}.top{height:62px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 26px}.crumb{font-size:12px;color:#9ca3af}.crumb b{color:#4b5563}.online{font-size:11px;background:#dcfce7;color:#166534;padding:6px 10px;border-radius:6px;font-weight:700}
+.content{padding:23px}.page{display:none}.page.active{display:block}.title{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px}.title h1{font-size:23px;margin:0}.title p{margin:5px 0 0;color:#6b7280;font-size:12px}.source{font-size:11px;color:#2563eb}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:#fff;border:1px solid #edf0f4;border-radius:13px;box-shadow:0 2px 8px #1018280b}.kpi{padding:18px;display:flex;justify-content:space-between}.kpi small{color:#6b7280}.kpi strong{display:block;font-size:24px;margin:7px 0 4px}.up{font-size:10px;color:#16a34a}.icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:18px}.blue{background:#dbeafe;color:#2563eb}.green{background:#dcfce7;color:#16a34a}.orange{background:#ffedd5;color:#ea580c}.purple{background:#f3e8ff;color:#9333ea}
+.charts{display:grid;grid-template-columns:1.08fr .92fr;gap:15px;margin-top:15px}.panel{padding:18px}.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.head h2{font-size:15px;margin:0}.head span{font-size:10px;color:#6b7280}
+.bars{display:grid;gap:12px}.barrow{display:grid;grid-template-columns:90px 1fr 44px;gap:10px;align-items:center;font-size:11px}.track{height:7px;background:#eef2f7;border-radius:6px;overflow:hidden}.fill{height:100%;background:#3b82f6;border-radius:6px}
+.case{background:#f9fafb;border-radius:11px;padding:15px}.case-title{display:flex;justify-content:space-between}.case-title b{font-size:17px}.badge{font-size:9px;background:#dcfce7;color:#15803d;border-radius:999px;padding:5px 8px;font-weight:700}.case p{font-size:10px;color:#6b7280;margin:5px 0 16px}
+.rangeblock{margin-top:12px}.rangetext{display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px}.range{height:11px;background:#e5e7eb;border-radius:8px;position:relative}.market,.model{height:100%;position:absolute;border-radius:8px}.market{left:28%;width:46%;background:#fb923c}.model{left:22%;width:57%;background:#3b82f6}
+.lower{display:grid;grid-template-columns:.9fr 1.1fr;gap:15px;margin-top:15px}.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.step{text-align:center;padding:12px 6px;background:#f8fafc;border-radius:9px;font-size:9px;color:#64748b}.step b{display:block;color:#2563eb;font-size:15px;margin-bottom:5px}
+.table{width:100%;border-collapse:collapse;font-size:10px}.table th{text-align:left;background:#f9fafb;color:#6b7280;padding:9px}.table td{padding:10px 9px;border-top:1px solid #eef0f4}.good{color:#15803d;background:#dcfce7;border-radius:5px;padding:4px 7px;font-weight:700}.warn{margin-top:12px;background:#fff7ed;border-left:4px solid #fb923c;border-radius:8px;padding:11px 13px;font-size:10px;color:#7c2d12;line-height:1.5}.page-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.detail-card{padding:22px}.detail-card h3{margin:0 0 9px;font-size:16px}.detail-card p{margin:0;color:#64748b;font-size:12px;line-height:1.7}.large-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:16px}.large-step{padding:22px 15px;background:#fff;border:1px solid #e5e7eb;border-radius:13px;text-align:center}.large-step b{display:block;color:#2563eb;font-size:24px}.large-step strong{display:block;margin:10px 0 6px}.large-step p{font-size:11px;color:#64748b;line-height:1.5}.stress{border-top:4px solid #fb923c}.case-table{font-size:12px}.case-table th,.case-table td{padding:13px}.big-case{padding:25px}.big-case h2{margin:5px 0;font-size:24px}
+.sample-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}.sample-card{padding:16px}.sample-card img{display:block;width:100%;height:360px;object-fit:contain;object-position:top;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px}.sample-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.sample-label h3{margin:0;font-size:15px}.sample-label span{font-size:10px;color:#64748b}.sample-caption{margin:11px 0 0;color:#64748b;font-size:11px;line-height:1.55}
+.interactive-cases{display:grid;grid-template-columns:285px 1fr;gap:15px}.case-sidebar{padding:16px}.case-list{display:grid;gap:7px;max-height:680px;overflow:auto;padding-right:4px}.case-item{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:11px;text-align:left;cursor:pointer}.case-item:hover{border-color:#93b4fd}.case-item.active{border-color:#2563eb;background:#eff6ff}.case-item b{display:block;font-size:12px}.case-item span{display:block;margin-top:4px;font-size:10px;color:#64748b}.case-detail{padding:24px}.case-detail-top{display:flex;justify-content:space-between;align-items:start}.case-detail h2{margin:7px 0 4px;font-size:24px}.case-detail p{margin:0;color:#64748b;font-size:12px}.gap-pill{border-radius:999px;padding:6px 10px;font-size:10px;font-weight:700}.gap-pill.good{background:#dcfce7;color:#15803d}.gap-pill.warn{background:#ffedd5;color:#c2410c}.compare-area{margin-top:20px;background:#f8fafc;border-radius:13px;padding:18px}.compare-row{display:grid;grid-template-columns:105px 1fr 145px;gap:12px;align-items:center;margin:13px 0;font-size:11px}.compare-track{height:13px;background:#e5e7eb;border-radius:9px;position:relative}.compare-segment{position:absolute;height:100%;border-radius:9px}.compare-segment.market-bar{background:#fb923c}.compare-segment.model-bar{background:#3b82f6}.case-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.case-stat{border:1px solid #e5e7eb;border-radius:11px;padding:14px}.case-stat small{color:#64748b}.case-stat b{display:block;margin-top:6px;font-size:18px}.case-insight{margin-top:15px;background:#fff7ed;border-left:4px solid #fb923c;border-radius:8px;padding:13px;font-size:11px;line-height:1.65}.case-source{display:inline-block;margin-top:12px;color:#2563eb;font-size:10px;text-decoration:none}
+@media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.kpis{grid-template-columns:1fr 1fr}.charts,.lower,.interactive-cases,.sample-grid{grid-template-columns:1fr}}
+.site-navbar{background:#1e293b;padding:0 clamp(1rem,4vw,2.5rem);display:flex;align-items:center;justify-content:space-between;gap:1.5rem;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.site-navbar-brand{color:#f1f5f9;font-size:1rem;font-weight:700;text-decoration:none;padding:1rem 0;white-space:nowrap;}
+.site-navbar-brand span{color:#93c5fd;}
+.site-navbar-links{display:flex;flex-wrap:wrap;gap:.2rem;}
+.site-navbar-links a{color:#94a3b8;border:1px solid transparent;border-radius:5px;font-size:.85rem;font-weight:600;padding:.5rem .8rem;text-decoration:none;transition:.15s;}
+.site-navbar-links a:hover,.site-navbar-links a.active{background:#334155;border-color:#334155;color:#f1f5f9;}
+</style>
+</head>
+<body>
+<header class="site-navbar">
+  <a class="site-navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+  <nav class="site-navbar-links">
+    <a href="/report.html">研究報告</a>
+    <a href="/data_cleaning.html">資料清洗流程</a>
+    <a href="/catboost_training.html">特徵變數模擬分析</a>
+    <a href="/salary_dashboard.html">三模型工作台</a>
+    <a href="/validation/salary_validation_admin_dashboard.html" class="active">模型驗證</a>
+    <a href="/predict.html">薪資預測</a>
+    <a href="/salary-url.html">104 面議預測</a>
+    <a href="/faq.html">專案問答</a>
+  </nav>
+</header>
+<div class="app">
+<aside class="side"><div class="brand"><i>104</i>Salary Validation</div>
+<div class="group"><small>驗證報告</small><div class="nav"><div class="active" data-page="overview"><span>▦</span>驗證總覽</div><div data-page="process"><span>↗</span>驗證流程</div><div data-page="cases"><span>◎</span>實際案例</div><div data-page="limits"><span>!</span>模型限制</div></div></div>
+<div class="group"><small>資料來源</small><div class="nav"><div><span>▤</span>36 組 Excel</div><div><span>⌁</span>104 薪資情報</div><div><span>◆</span>CatBoost 模型</div></div></div>
+<div class="version"><b>External Validation v1.0</b><br>更新日期：2026-06-15<br>模型：CatBoost min / max</div></aside>
+<main class="main"><header class="top"><div class="crumb">專題報告　/　外部驗證　/　<b>Dashboard</b></div><div style="display:flex;align-items:center;gap:10px"><div class="online">驗證完成</div></div></header>
+<div class="content page active" id="overview"><div class="title"><div><h1>薪資模型外部驗證</h1><p>以 104 薪資情報 P25～P75，比較模型 min～max 預測區間</p></div><div class="source">資料來源：salary_model_validation.xlsx</div></div>
+<section class="kpis">
+<div class="card kpi"><div><small>驗證案例</small><strong>36</strong><span class="up">6 職務 × 3 地區 × 2 年資</span></div><div class="icon blue">▦</div></div>
+<div class="card kpi"><div><small>平均中點差距</small><strong>10.51%</strong><span class="up">整體落差約一成</span></div><div class="icon green">◎</div></div>
+<div class="card kpi"><div><small>區間重疊率</small><strong>100%</strong><span class="up">36 / 36 案例有交集</span></div><div class="icon orange">↔</div></div>
+<div class="card kpi"><div><small>最佳案例</small><strong>0.43%</strong><span class="up">資料分析師｜新北市</span></div><div class="icon purple">★</div></div>
+</section>
+<section class="charts">
+<div class="card panel"><div class="head"><h2>各職務平均中點差距</h2><span>越低越接近市場</span></div><div class="bars">
+<div class="barrow"><span>資料分析師</span><div class="track"><div class="fill" style="width:47%"></div></div><b>7.05%</b></div>
+<div class="barrow"><span>測試工程師</span><div class="track"><div class="fill" style="width:63%"></div></div><b>9.39%</b></div>
+<div class="barrow"><span>軟體專案經理</span><div class="track"><div class="fill" style="width:64%"></div></div><b>9.52%</b></div>
+<div class="barrow"><span>前端工程師</span><div class="track"><div class="fill" style="width:74%"></div></div><b>10.93%</b></div>
+<div class="barrow"><span>後端工程師</span><div class="track"><div class="fill" style="width:77%"></div></div><b>11.38%</b></div>
+<div class="barrow"><span>AI 工程師</span><div class="track"><div class="fill" style="width:100%"></div></div><b>14.81%</b></div>
+</div></div>
+<div class="card panel"><div class="head"><h2>最佳實際案例</h2><span class="badge">MOST ACCURATE</span></div><div class="case"><div class="case-title"><b>資料分析師</b><span>中點差距 0.43%</span></div><p>新北市｜3～5年｜電腦軟體服務業｜50 人</p>
+<div class="rangeblock"><div class="rangetext"><span>104 市場區間</span><b>$49,960 ～ $70,000</b></div><div class="range"><div class="market"></div></div></div>
+<div class="rangeblock"><div class="rangetext"><span>模型預測區間</span><b>$47,301 ～ $72,140</b></div><div class="range"><div class="model"></div></div></div></div></div>
+</section>
+<section class="lower"><div class="card panel"><div class="head"><h2>外部驗證流程</h2><span>5 STEPS</span></div><div class="flow"><div class="step"><b>01</b>建立矩陣</div><div class="step"><b>02</b>取得 104</div><div class="step"><b>03</b>呼叫模型</div><div class="step"><b>04</b>計算誤差</div><div class="step"><b>05</b>判讀限制</div></div><div class="warn"><b>限制訊號：</b>DevOps 六組測試平均中點差距 28.95%，顯示模型對高薪、較少見職務可能低估。</div></div>
+<div class="card panel"><div class="head"><h2>代表案例</h2><span>依中點差距排序</span></div><table class="table"><thead><tr><th>職務</th><th>地區</th><th>年資</th><th>模型區間</th><th>差距</th><th>狀態</th></tr></thead><tbody>
+<tr><td><b>資料分析師</b></td><td>新北市</td><td>3～5年</td><td>47,301～72,140</td><td>0.43%</td><td><span class="good">高度接近</span></td></tr>
+<tr><td>後端工程師</td><td>新竹市</td><td>3～5年</td><td>50,756～77,410</td><td>2.10%</td><td><span class="good">接近</span></td></tr>
+<tr><td>資料分析師</td><td>台北市</td><td>1～3年</td><td>41,057～59,160</td><td>2.28%</td><td><span class="good">接近</span></td></tr>
+</tbody></table></div></section>
+</div>
+
+<div class="content page" id="process">
+ <div class="title"><div><h1>外部驗證流程</h1><p>從測試條件、104 市場基準到模型誤差判讀</p></div><div class="source">5 Steps</div></div>
+ <div class="large-flow">
+  <div class="large-step"><b>01</b><strong>建立測試矩陣</strong><p>6 種職務、3 個地區與 2 個年資層級，共 36 組案例。</p></div>
+  <div class="large-step"><b>02</b><strong>取得市場基準</strong><p>使用 104 薪資情報的 P25～P75 作為外部市場區間。</p></div>
+  <div class="large-step"><b>03</b><strong>呼叫模型</strong><p>使用 Dashboard 完整特徵，分別預測 min 與 max。</p></div>
+  <div class="large-step"><b>04</b><strong>計算誤差</strong><p>比較 MAPE、中點差距率與兩個薪資區間是否重疊。</p></div>
+  <div class="large-step"><b>05</b><strong>判讀限制</strong><p>找出模型適用範圍，以及高薪與少樣本職務的風險。</p></div>
+ </div>
+ <div class="page-grid" style="margin-top:15px">
+  <div class="card detail-card"><h3>中點差距率</h3><p>|模型區間中點 − 104 區間中點| ÷ 104 區間中點。越低代表模型預測越接近外部市場。</p></div>
+  <div class="card detail-card"><h3>區間重疊率</h3><p>模型 min～max 是否與 104 P25～P75 相交。36 組正式案例皆有區間重疊。</p></div>
+ </div>
+ <div class="sample-grid">
+  <div class="card sample-card">
+   <div class="sample-label"><h3>市場基準：104 薪資情報</h3><span>資料分析師｜依年資分析</span></div>
+   <img src="png/104_資料分析師_薪資情報_sample.png" alt="104 資料分析師薪資情報截圖">
+   <p class="sample-caption">104 顯示資料分析師 3～5 年的月薪 P25～P75 約為 49,960～70,000 元，作為外部市場比較基準。</p>
+  </div>
+  <div class="card sample-card">
+   <div class="sample-label"><h3>模型輸出：本系統預測結果</h3><span>新北市｜3～5年｜CatBoost Max</span></div>
+   <img src="png/本系統_資料分析師_預測結果_sample.png" alt="本系統資料分析師薪資預測結果截圖">
+   <p class="sample-caption">使用完整 Dashboard payload 呼叫 CatBoost；Max 預測為 72,140 元，搭配 Min 47,301 元形成模型預測區間。</p>
+  </div>
+ </div>
+</div>
+
+<div class="content page" id="cases">
+ <div class="title"><div><h1>實際案例</h1><p>完整 36 組驗證案例，依中點差距率由低到高排列</p></div><div class="source">點選左側案例查看詳細比較</div></div>
+ <div class="interactive-cases">
+  <div class="card case-sidebar"><div class="head"><h2>選擇案例</h2><span>36 組</span></div><div class="case-list" id="adminCaseList"></div></div>
+  <div class="card case-detail">
+   <div class="case-detail-top"><div><span class="badge">EXTERNAL VALIDATION</span><h2 id="adminCaseTitle">載入中</h2><p id="adminCaseMeta"></p></div><span id="adminCaseGap" class="gap-pill good"></span></div>
+   <div class="compare-area">
+    <div class="compare-row"><b>104 市場區間</b><div class="compare-track"><div id="adminMarketBar" class="compare-segment market-bar"></div></div><strong id="adminMarketText"></strong></div>
+    <div class="compare-row"><b>模型預測區間</b><div class="compare-track"><div id="adminModelBar" class="compare-segment model-bar"></div></div><strong id="adminModelText"></strong></div>
+   </div>
+   <div class="case-stats"><div class="case-stat"><small>104 市場中點</small><b id="adminMarketMid"></b></div><div class="case-stat"><small>模型預測中點</small><b id="adminModelMid"></b></div><div class="case-stat"><small>區間是否重疊</small><b id="adminOverlap"></b></div></div>
+   <div id="adminCaseInsight" class="case-insight"></div><a id="adminCaseSource" class="case-source" target="_blank" rel="noreferrer">開啟 104 薪資情報來源</a>
+  </div>
+ </div>
+</div>
+
+<div class="content page" id="limits">
+ <div class="title"><div><h1>模型限制</h1><p>外部驗證同時用來找出模型不可靠的情境</p></div><div class="source">DevOps Stress Test</div></div>
+ <div class="page-grid">
+  <div class="card detail-card stress"><h3>高薪、較少見職務可能低估</h3><p>DevOps 六組壓力測試的平均中點差距為 28.95%，明顯高於正式 36 組案例的 10.51%。模型預測多數低於 104 市場區間。</p></div>
+  <div class="card detail-card"><h3>104 樣本數也需判讀</h3><p>DevOps 各年資層的 104 有效樣本僅約 11 筆。外部市場基準本身也可能因樣本較少而波動。</p></div>
+  <div class="card detail-card"><h3>不同頁面的輸入不可混用</h3><p>正式驗證使用 salary_dashboard.html 的完整 payload；首頁簡化版會自行進行職務分群，因此數字可能不同。</p></div>
+  <div class="card detail-card"><h3>適用方式</h3><p>結果適合作為薪資範圍參考，不應視為單一職缺的保證薪資。高薪或少見職務應顯示較低可信度提示。</p></div>
+ </div>
+ <div class="card panel" style="margin-top:15px"><div class="head"><h2>DevOps Engineer 壓力測試案例</h2><span>6 組</span></div><table class="table case-table"><thead><tr><th>案例</th><th>模型區間</th><th>104 區間</th><th>中點差距</th><th>區間重疊</th></tr></thead><tbody id="devopsExamples"></tbody></table></div>
+ <div class="warn" style="font-size:12px;margin-top:15px"><b>結論：</b>模型在常見科技職務上能提供具參考性的薪資範圍，但對高薪、較少見職務可能低估，使用時需搭配市場樣本數與完整職缺條件。</div>
+</div>
+</main></div>
+<script src="salary_validation_cases.js"></script>
+<script>
+const pageNames={overview:"驗證總覽",process:"驗證流程",cases:"實際案例",limits:"模型限制"};
+document.querySelectorAll(".nav [data-page]").forEach(item=>{
+ item.addEventListener("click",()=>{
+  const target=item.dataset.page;
+  document.querySelectorAll(".nav [data-page]").forEach(x=>x.classList.toggle("active",x===item));
+  document.querySelectorAll(".page").forEach(page=>page.classList.toggle("active",page.id===target));
+  document.querySelector(".crumb b").textContent=pageNames[target];
+  location.hash=target;
+ });
+});
+const initial=location.hash.slice(1);
+if(pageNames[initial]) document.querySelector(`[data-page="${initial}"]`).click();
+
+const validationData=window.VALIDATION_DATA||{baseline:[],devops:[]};
+const money=n=>new Intl.NumberFormat("zh-TW").format(Math.round(n));
+const percent=n=>`${(n*100).toFixed(2)}%`;
+const orderedCases=[...validationData.baseline].sort((a,b)=>a.midpointGap-b.midpointGap);
+let selectedCase=0;
+function renderAdminCases(){
+ const list=document.querySelector("#adminCaseList");
+ if(!list)return;
+ list.innerHTML=orderedCases.map((item,index)=>`<button class="case-item ${index===selectedCase?"active":""}" data-case="${index}"><b>${item.keyword}｜${item.experience}</b><span>${item.location} · 模型 ${money(item.modelMin)}～${money(item.modelMax)} · 差距 ${percent(item.midpointGap)}</span></button>`).join("");
+ list.querySelectorAll(".case-item").forEach(button=>button.addEventListener("click",()=>{selectedCase=Number(button.dataset.case);renderAdminCases()}));
+ renderAdminCase(orderedCases[selectedCase]);
+}
+function renderAdminCase(item){
+ if(!item)return;
+ document.querySelector("#adminCaseTitle").textContent=`${item.keyword}｜${item.location}`;
+ document.querySelector("#adminCaseMeta").textContent=`${item.experience}｜${item.industry}｜公司規模 ${item.companySize} 人｜${item.model}`;
+ const gap=document.querySelector("#adminCaseGap");
+ gap.textContent=`中點差距 ${percent(item.midpointGap)}`;
+ gap.className=`gap-pill ${item.midpointGap<=.2?"good":"warn"}`;
+ document.querySelector("#adminMarketText").textContent=`$${money(item.marketMin)} ～ $${money(item.marketMax)}`;
+ document.querySelector("#adminModelText").textContent=`$${money(item.modelMin)} ～ $${money(item.modelMax)}`;
+ document.querySelector("#adminMarketMid").textContent=`$${money(item.marketMid)}`;
+ document.querySelector("#adminModelMid").textContent=`$${money(item.modelMid)}`;
+ document.querySelector("#adminOverlap").textContent=item.overlap?"有重疊":"未重疊";
+ document.querySelector("#adminCaseSource").href=item.source;
+ const min=Math.floor(Math.min(item.marketMin,item.modelMin)*.85/5000)*5000;
+ const max=Math.ceil(Math.max(item.marketMax,item.modelMax)*1.08/5000)*5000;
+ const pos=value=>(value-min)/(max-min)*100;
+ const market=document.querySelector("#adminMarketBar");
+ const model=document.querySelector("#adminModelBar");
+ market.style.left=`${pos(item.marketMin)}%`; market.style.width=`${pos(item.marketMax)-pos(item.marketMin)}%`;
+ model.style.left=`${pos(item.modelMin)}%`; model.style.width=`${pos(item.modelMax)-pos(item.modelMin)}%`;
+ document.querySelector("#adminCaseInsight").innerHTML=item.midpointGap<=.2
+  ? `<b>案例解讀：</b>模型與 104 市場區間${item.overlap?"有重疊":"未重疊"}，中點差距為 <b>${percent(item.midpointGap)}</b>，可作為目前條件下的薪資範圍參考。`
+  : `<b>注意：</b>此案例中點差距為 <b>${percent(item.midpointGap)}</b>，建議搭配職缺內容、公司規模與市場樣本數判讀。`;
+}
+function renderDevopsExamples(){
+ const body=document.querySelector("#devopsExamples");
+ if(!body)return;
+ body.innerHTML=[...validationData.devops].sort((a,b)=>a.midpointGap-b.midpointGap).map(item=>`<tr><td><b>DevOps Engineer｜${item.location}｜${item.experience}</b></td><td>${money(item.modelMin)}～${money(item.modelMax)}</td><td>${money(item.marketMin)}～${money(item.marketMax)}</td><td><span class="${item.midpointGap<=.2?"good":"gap-pill warn"}">${percent(item.midpointGap)}</span></td><td>${item.overlap?"有重疊":"未重疊"}</td></tr>`).join("");
+}
+renderAdminCases();
+renderDevopsExamples();
+</script>
+</body></html>

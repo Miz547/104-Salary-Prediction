@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專題報告</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --accent: #ff6b2c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            background: var(--bg);
+        }
+
+        body {
+            margin: 0;
+            font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .deck-toolbar {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+        }
+
+        .toolbar-link {
+            min-height: 40px;
+            padding: 0 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 8px;
+            color: var(--text);
+            background: rgba(2, 6, 23, 0.68);
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .toolbar-link:hover {
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .slide {
+            width: 100%;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            scroll-snap-align: start;
+            background: #020617;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100vh;
+            display: block;
+            object-fit: contain;
+            background: #020617;
+        }
+
+        .empty-slide {
+            width: min(980px, calc(100vw - 40px));
+            min-height: min(620px, calc(100vh - 80px));
+            display: grid;
+            place-items: center;
+            padding: 36px;
+            border: 1px dashed rgba(255, 255, 255, 0.28);
+            border-radius: 8px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .empty-slide h1 {
+            margin: 0 0 14px;
+            font-size: 36px;
+        }
+
+        .empty-slide p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        @media (max-width: 760px) {
+            .deck-toolbar {
+                left: 12px;
+                right: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="deck-toolbar" aria-label="報告導覽">
+        <a class="toolbar-link" href="/">首頁</a>
+        <a class="toolbar-link" href="/faq.html">專案問答</a>
+    </nav>
+
+    <!--
+    把 PPT 匯出的圖片放到 D:\104salary_On-Prem\reports 後，
+    依序新增下面這種區塊，一張圖片就是一個全螢幕視窗。
+
+    <section class="slide">
+        <img src="reports/slide-01.JPG" alt="專題報告第 1 頁">
+    </section>
+    -->
+
+    <section class="slide"><img src="reports/slide-01.JPG" alt="專題報告第 1 頁"></section>
+    <section class="slide"><img src="reports/slide-02.JPG" alt="專題報告第 2 頁"></section>
+    <section class="slide"><img src="reports/slide-03.JPG" alt="專題報告第 3 頁"></section>
+    <section class="slide"><img src="reports/slide-04.JPG" alt="專題報告第 4 頁"></section>
+    <section class="slide"><img src="reports/slide-05.JPG" alt="專題報告第 5 頁"></section>
+    <section class="slide"><img src="reports/slide-06.JPG" alt="專題報告第 6 頁"></section>
+    <section class="slide"><img src="reports/slide-07.JPG" alt="專題報告第 7 頁"></section>
+    <section class="slide"><img src="reports/slide-08.JPG" alt="專題報告第 8 頁"></section>
+    <section class="slide"><img src="reports/slide-09.JPG" alt="專題報告第 9 頁"></section>
+    <section class="slide"><img src="reports/slide-10.JPG" alt="專題報告第 10 頁"></section>
+    <section class="slide"><img src="reports/slide-11.JPG" alt="專題報告第 11 頁"></section>
+    <section class="slide"><img src="reports/slide-12.JPG" alt="專題報告第 12 頁"></section>
+    <section class="slide"><img src="reports/slide-13.JPG" alt="專題報告第 13 頁"></section>
+    <section class="slide"><img src="reports/slide-14.JPG" alt="專題報告第 14 頁"></section>
+    <section class="slide"><img src="reports/slide-15.JPG" alt="專題報告第 15 頁"></section>
+    <section class="slide"><img src="reports/slide-16.JPG" alt="專題報告第 16 頁"></section>
+    <section class="slide"><img src="reports/slide-17.JPG" alt="專題報告第 17 頁"></section>
+    <section class="slide"><img src="reports/slide-18.JPG" alt="專題報告第 18 頁"></section>
+    <section class="slide"><img src="reports/slide-19.JPG" alt="專題報告第 19 頁"></section>
+    <section class="slide"><img src="reports/slide-20.JPG" alt="專題報告第 20 頁"></section>
+    <section class="slide"><img src="reports/slide-21.JPG" alt="專題報告第 21 頁"></section>
+    <section class="slide"><img src="reports/slide-22.JPG" alt="專題報告第 22 頁"></section>
+    <section class="slide"><img src="reports/slide-23.JPG" alt="專題報告第 23 頁"></section>
+    <section class="slide"><img src="reports/slide-24.JPG" alt="專題報告第 24 頁"></section>
+    <section class="slide"><img src="reports/slide-25.JPG" alt="專題報告第 25 頁"></section>
+    <section class="slide"><img src="reports/slide-26.JPG" alt="專題報告第 26 頁"></section>
+    <section class="slide"><img src="reports/slide-27.JPG" alt="專題報告第 27 頁"></section>
+    <section class="slide"><img src="reports/slide-28.JPG" alt="專題報告第 28 頁"></section>
+    <section class="slide"><img src="reports/slide-29.JPG" alt="專題報告第 29 頁"></section>
+    <section class="slide"><img src="reports/slide-30.JPG" alt="專題報告第 30 頁"></section>
+    <section class="slide"><img src="reports/slide-31.JPG" alt="專題報告第 31 頁"></section>
+    <section class="slide"><img src="reports/slide-32.JPG" alt="專題報告第 32 頁"></section>
+    <section class="slide"><img src="reports/slide-33.JPG" alt="專題報告第 33 頁"></section>
+    <section class="slide"><img src="reports/slide-34.JPG" alt="專題報告第 34 頁"></section>
+    <section class="slide"><img src="reports/slide-35.JPG" alt="專題報告第 35 頁"></section>
+    <section class="slide"><img src="reports/slide-36.JPG" alt="專題報告第 36 頁"></section>
+    <section class="slide"><img src="reports/slide-37.JPG" alt="專題報告第 37 頁"></section>
+    <section class="slide"><img src="reports/slide-38.JPG" alt="專題報告第 38 頁"></section>
+    <section class="slide"><img src="reports/slide-39.JPG" alt="專題報告第 39 頁"></section>
+    <section class="slide"><img src="reports/slide-40.JPG" alt="專題報告第 40 頁"></section>
+    <section class="slide"><img src="reports/slide-41.JPG" alt="專題報告第 41 頁"></section>
+    <section class="slide"><img src="reports/slide-42.JPG" alt="專題報告第 42 頁"></section>
+    <section class="slide"><img src="reports/slide-43.JPG" alt="專題報告第 43 頁"></section>
+    <section class="slide"><img src="reports/slide-44.JPG" alt="專題報告第 44 頁"></section>
+    <section class="slide"><img src="reports/slide-45.JPG" alt="專題報告第 45 頁"></section>
+    <section class="slide"><img src="reports/slide-46.JPG" alt="專題報告第 46 頁"></section>
+    <section class="slide"><img src="reports/slide-47.JPG" alt="專題報告第 47 頁"></section>
+    <section class="slide"><img src="reports/slide-48.JPG" alt="專題報告第 48 頁"></section>
+    <section class="slide"><img src="reports/slide-49.JPG" alt="專題報告第 49 頁"></section>
+    <section class="slide"><img src="reports/slide-50.JPG" alt="專題報告第 50 頁"></section>
+    <section class="slide"><img src="reports/slide-51.JPG" alt="專題報告第 51 頁"></section>
+    <section class="slide"><img src="reports/slide-52.JPG" alt="專題報告第 52 頁"></section>
+    <section class="slide"><img src="reports/slide-53.JPG" alt="專題報告第 53 頁"></section>
+    <section class="slide"><img src="reports/slide-54.JPG" alt="專題報告第 54 頁"></section>
+    <section class="slide"><img src="reports/slide-55.JPG" alt="專題報告第 55 頁"></section>
+    <section class="slide"><img src="reports/slide-56.JPG" alt="專題報告第 56 頁"></section>
+    <section class="slide"><img src="reports/slide-57.JPG" alt="專題報告第 57 頁"></section>
+    <section class="slide"><img src="reports/slide-58.JPG" alt="專題報告第 58 頁"></section>
+    <section class="slide"><img src="reports/slide-59.JPG" alt="專題報告第 59 頁"></section>
+    <section class="slide"><img src="reports/slide-60.JPG" alt="專題報告第 60 頁"></section>
+</body>
+</html>

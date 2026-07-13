@@ -1,0 +1,611 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三模型比較工作台｜薪資預測研究</title>
+  <style>
+    :root {
+      --accent: #1a56db;
+      --accent-strong: #1e40af;
+      --accent-light: #eff6ff;
+      --navy: #1e293b;
+      --ink: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --shadow: 0 1px 3px rgba(16,24,40,0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; font-size: 14px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    /* Navbar */
+    .navbar { background: var(--navy); padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+    .navbar-brand span { color: #93c5fd; }
+    .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+    .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+    .navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+
+    /* View tabs */
+    .view-tabs { background: #fff; border-bottom: 1px solid var(--border); padding: 0 clamp(1rem,4vw,2rem); display: flex; gap: .25rem; }
+    .view-tab { height: 44px; padding: 0 16px; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-weight: 700; font-size: .88rem; cursor: pointer; transition: .15s; }
+    .view-tab.active { border-bottom-color: var(--accent); color: var(--accent); }
+    .view-tab:hover:not(.active) { color: var(--ink); }
+
+    /* Layout */
+    .layout { min-height: calc(100vh - 104px); display: grid; grid-template-columns: 300px minmax(0,1fr) 320px; }
+    .sidebar, .summary { background: var(--bg); padding: 20px 16px; }
+    .sidebar { border-right: 1px solid var(--border); }
+    .summary { border-left: 1px solid var(--border); }
+    .main { padding: 20px; min-width: 0; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Panels */
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 18px; margin-bottom: 16px; }
+    .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .section-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
+
+    .status-pill { min-height: 26px; padding: 4px 10px; border-radius: 4px; border: 1px solid #bfdbfe; background: var(--accent-light); color: var(--accent-strong); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+    /* Form */
+    .field { margin-bottom: 14px; }
+    .field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .control { width: 100%; min-height: 38px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: var(--ink); padding: 0 10px; outline: none; }
+    .control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,0.12); }
+    .field-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+
+    /* Buttons */
+    .button-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .primary-button { min-height: 40px; border-radius: 4px; font-weight: 800; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+    .primary-button:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .secondary-button { min-height: 40px; border-radius: 4px; font-weight: 700; border: 1px solid var(--border); background: #fff; color: var(--ink); }
+    .secondary-button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Notice */
+    .notice { padding: 12px; border: 1px solid #bfdbfe; border-radius: 4px; background: var(--accent-light); color: var(--accent-strong); line-height: 1.55; font-size: 13px; font-weight: 700; }
+
+    /* Metrics */
+    .metric-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+    .metric { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+    .metric-value { font-size: 20px; font-weight: 900; color: var(--ink); overflow-wrap: anywhere; }
+    .metric-value.good { color: #0f766e; }
+    .metric-value.accent { color: var(--accent); }
+
+    /* Bars */
+    .bar-list { display: grid; gap: 12px; }
+    .bar-row { display: grid; grid-template-columns: 130px minmax(0,1fr) 90px; gap: 12px; align-items: center; }
+    .bar-label, .bar-value { font-weight: 700; color: var(--ink); font-size: 13px; }
+    .bar-track { height: 10px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+
+    /* Feature list */
+    .feature-list { padding: 0; margin: 0; list-style: none; display: grid; gap: 0; }
+    .feature-list li { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .feature-list li strong { color: var(--muted); font-weight: 700; }
+
+    /* Payload */
+    .payload-box { min-height: 220px; max-height: 400px; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: #0f172a; color: #e2e8f0; white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.6; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; min-width: 720px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; font-size: 13px; }
+    th { background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 800; }
+    tr:last-child td { border-bottom: none; }
+
+    /* Model cards */
+    .model-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 14px; margin-bottom: 10px; }
+    .model-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .model-card strong { font-size: 14px; color: var(--ink); }
+    .model-card small { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .stack { display: grid; gap: 10px; }
+
+    /* Report links */
+    .report-link-list { display: grid; gap: 8px; margin-top: 12px; }
+    .report-link { display: block; padding: 9px 12px; border: 1px solid #bfdbfe; border-radius: 4px; background: var(--accent-light); color: var(--accent-strong); font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; transition: .15s; }
+    .report-link:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 280px minmax(0,1fr); }
+      .summary { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+    }
+    @media (max-width: 780px) {
+      .navbar { flex-direction: column; align-items: flex-start; padding: .75rem 1rem; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar, .summary, .main { padding: 14px; border: 0; }
+      .field-grid, .metric-grid, .button-row { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 92px 1fr; }
+      .bar-value { grid-column: 2; }
+      .feature-list li { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+  <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/salary_dashboard.html" class="active">三模型工作台</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html">薪資預測</a>
+        <a href="/salary-url.html">104 面議預測</a>
+        <a href="/faq.html">專案問答</a>
+    </nav>
+</header>
+
+<div class="view-tabs">
+  <button class="view-tab active" type="button" data-view="predict">預測表單</button>
+  <button class="view-tab" type="button" data-view="compare">模型評估</button>
+</div>
+
+<main class="layout">
+  <!-- 左欄：輸入 -->
+  <aside class="sidebar">
+    <section class="view active" data-panel="predict">
+      <div class="panel-header">
+        <h1 class="section-title">輸入職缺條件</h1>
+        <span class="status-pill" id="apiStatus">API</span>
+      </div>
+      <form id="predictionForm">
+        <div class="field">
+          <label for="modelSelect">模型</label>
+          <select class="control" id="modelSelect" name="model">
+            <option value="CatBoost" selected>CatBoost</option>
+            <option value="LightGBM">LightGBM</option>
+            <option value="XGBoost">XGBoost</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="targetSelect">預測目標</label>
+          <select class="control" id="targetSelect" name="target">
+            <option value="min">最低薪資</option>
+            <option value="max" selected>最高薪資</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="locationSelect">地區</label>
+          <select class="control" id="locationSelect" name="clean_location">
+            <option value="台北市" selected>台北市</option>
+            <option value="新北市">新北市</option>
+            <option value="桃園市">桃園市</option>
+            <option value="台中市">台中市</option>
+            <option value="台南市">台南市</option>
+            <option value="高雄市">高雄市</option>
+            <option value="基隆市">基隆市</option>
+            <option value="新竹市">新竹市</option>
+            <option value="嘉義市">嘉義市</option>
+            <option value="新竹縣">新竹縣</option>
+            <option value="苗栗縣">苗栗縣</option>
+            <option value="彰化縣">彰化縣</option>
+            <option value="南投縣">南投縣</option>
+            <option value="雲林縣">雲林縣</option>
+            <option value="嘉義縣">嘉義縣</option>
+            <option value="屏東縣">屏東縣</option>
+            <option value="宜蘭縣">宜蘭縣</option>
+            <option value="花蓮縣">花蓮縣</option>
+            <option value="台東縣">台東縣</option>
+            <option value="澎湖縣">澎湖縣</option>
+            <option value="金門縣">金門縣</option>
+            <option value="連江縣">連江縣</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="experienceSelect">年資</label>
+          <select class="control" id="experienceSelect" name="experience_band">
+            <option value="經歷不拘~1年">不拘～1 年</option>
+            <option value="1~3年" selected>1～3 年</option>
+            <option value="3~5年">3～5 年</option>
+            <option value="5~7年">5～7 年</option>
+            <option value="7年以上">7 年以上</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="keywordInput">關鍵字</label>
+          <input class="control" id="keywordInput" name="keyword" value="AI 工程師" />
+        </div>
+        <div class="field">
+          <label for="titleInput">職務名稱</label>
+          <select class="control" id="titleInput" name="job_title">
+            <option value="Machine Learning Engineer" selected>Machine Learning Engineer</option>
+            <option value="AI Engineer">AI Engineer</option>
+            <option value="Data Scientist">Data Scientist</option>
+            <option value="Data Engineer">Data Engineer</option>
+            <option value="Backend Engineer">Backend Engineer</option>
+            <option value="Frontend Engineer">Frontend Engineer</option>
+            <option value="Full Stack Engineer">Full Stack Engineer</option>
+            <option value="QA Automation Engineer">QA Automation Engineer</option>
+            <option value="DevOps Engineer">DevOps Engineer</option>
+            <option value="Product Manager">Product Manager</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>職務類別</label>
+          <input type="hidden" id="categoryInput" name="job_category" value="軟體工程師,演算法工程師" />
+          <div class="field-grid" id="categoryOptions"></div>
+        </div>
+        <div class="field">
+          <label for="industrySelect">產業</label>
+          <select class="control" id="industrySelect" name="jobCompanyIndustry">
+            <option value="電腦軟體服務業" selected>電腦軟體服務業</option>
+            <option value="網際網路相關業">網際網路相關業</option>
+            <option value="電腦系統整合服務業">電腦系統整合服務業</option>
+            <option value="半導體業">半導體業</option>
+            <option value="金融業">金融業</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="employeeSelect">公司規模</label>
+          <select class="control" id="employeeSelect" name="employee_scale_cat">
+            <option value="10">10 人</option>
+            <option value="30">30 人</option>
+            <option value="50" selected>50 人</option>
+            <option value="100">100 人</option>
+            <option value="500">500 人</option>
+            <option value="1000">1000 人以上</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button class="primary-button" type="submit">送出預測</button>
+          <button class="secondary-button" type="button" id="resetButton">重設</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="view" data-panel="compare">
+      <div class="panel-header">
+        <h1 class="section-title">最佳模型摘要</h1>
+      </div>
+      <div class="stack" id="summaryCards"></div>
+    </section>
+  </aside>
+
+  <!-- 中欄：主要內容 -->
+  <section class="main">
+    <section class="view active" data-panel="predict">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">薪資預測結果</h2>
+          <span class="status-pill" id="predStatus">前端估算</span>
+        </div>
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="metric-label">使用模型</div>
+            <div class="metric-value" id="selectedModel">CatBoost</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">預測月薪</div>
+            <div class="metric-value good" id="salaryEstimate">NT$ 78,000</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">參考 MAE</div>
+            <div class="metric-value accent" id="modelMae">NT$ 10,751</div>
+          </div>
+        </div>
+        <div class="notice" style="margin-top:14px;">
+          <span id="predictionSource">目前使用前端展示估算；若 /predict API 有回應，會自動套用 API 結果。</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">薪資區間（含 MAE 誤差範圍）</h2>
+        </div>
+        <div class="bar-list" id="predictionBars"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">送出特徵</h2>
+        </div>
+        <ul class="feature-list" id="featureList"></ul>
+      </div>
+    </section>
+
+    <section class="view" data-panel="compare">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">模型評估指標（測試集）</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>預測目標</th>
+                <th>模型</th>
+                <th>MAE</th>
+                <th>RMSE</th>
+                <th>R²</th>
+                <th>MAPE</th>
+                <th>誤差 ≤ 25%</th>
+              </tr>
+            </thead>
+            <tbody id="metricsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="section-title">MAE 排名（由低到高）</h2>
+        </div>
+        <div class="bar-list" id="rankingBars"></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- 右欄 -->
+  <aside class="summary">
+    <section class="view active" data-panel="predict">
+      <div class="panel-header">
+        <h2 class="section-title">API Payload</h2>
+      </div>
+      <pre class="payload-box" id="payloadBox"></pre>
+      <div class="button-row" style="margin-top:10px;">
+        <button class="secondary-button" type="button" id="copyPayload">複製 JSON</button>
+        <button class="secondary-button" type="button" id="apiButton">測試連線</button>
+      </div>
+      <div class="notice" id="apiNotice" style="margin-top:10px;">
+        端點：/predict
+      </div>
+    </section>
+
+    <section class="view" data-panel="compare">
+      <div class="panel-header">
+        <h2 class="section-title">最佳模型建議</h2>
+      </div>
+      <div class="stack">
+        <div class="model-card">
+          <div class="model-card-header">
+            <strong>最高薪預測</strong>
+            <small>MAE 最低</small>
+          </div>
+          <div>CatBoost：NT$ 10,751</div>
+        </div>
+        <div class="model-card">
+          <div class="model-card-header">
+            <strong>最低薪預測</strong>
+            <small>MAE 最低</small>
+          </div>
+          <div>LightGBM：NT$ 5,703</div>
+        </div>
+        <div class="notice">
+          CatBoost 在最高薪資預測表現穩定；LightGBM 在最低薪資目標有較低 MAE。
+        </div>
+      </div>
+    </section>
+
+    <div class="model-card" style="margin-top:16px;">
+      <div class="model-card-header">
+        <strong>模型視覺化報表</strong>
+        <small>HTML</small>
+      </div>
+      <div class="report-link-list">
+        <a class="report-link" href="outputs/visualizations/catboost_max_report.html">CatBoost · 最高薪</a>
+        <a class="report-link" href="outputs/visualizations/catboost_min_report.html">CatBoost · 最低薪</a>
+        <a class="report-link" href="outputs/visualizations/lightgbm_max_report.html">LightGBM · 最高薪</a>
+        <a class="report-link" href="outputs/visualizations/lightgbm_min_report.html">LightGBM · 最低薪</a>
+        <a class="report-link" href="outputs/visualizations/xgboost_max_report.html">XGBoost · 最高薪</a>
+        <a class="report-link" href="outputs/visualizations/xgboost_min_report.html">XGBoost · 最低薪</a>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+  const trainingMetrics = [
+    { target: "max", model: "CatBoost", mae: 10751, rmse: 19472, r2: 0.4338, mape: 16.67, within: 77.12 },
+    { target: "max", model: "LightGBM", mae: 10862, rmse: 19764, r2: 0.4167, mape: 16.78, within: 76.06 },
+    { target: "max", model: "XGBoost",  mae: 12118, rmse: 21171, r2: 0.3307, mape: 19.10, within: 72.25 },
+    { target: "min", model: "CatBoost", mae: 5789,  rmse: 10743, r2: 0.4402, mape: 12.02, within: 88.85 },
+    { target: "min", model: "LightGBM", mae: 5703,  rmse: 10867, r2: 0.4272, mape: 11.75, within: 88.26 },
+    { target: "min", model: "XGBoost",  mae: 6322,  rmse: 11671, r2: 0.3394, mape: 13.13, within: 86.41 },
+  ];
+
+  const modelMae = {
+    CatBoost: { max: 10751, min: 5789 },
+    LightGBM: { max: 10862, min: 5703 },
+    XGBoost:  { max: 12118, min: 6322 },
+  };
+
+  const categoryMap = {
+    "Machine Learning Engineer": ["軟體工程師","演算法工程師","AI 工程師"],
+    "AI Engineer":               ["AI 工程師","演算法工程師","軟體工程師"],
+    "Data Scientist":            ["資料科學家","資料分析師","演算法工程師"],
+    "Data Engineer":             ["資料工程師","軟體工程師","資料庫管理人員"],
+    "Backend Engineer":          ["後端工程師","軟體工程師","系統工程師"],
+    "Frontend Engineer":         ["前端工程師","網頁工程師","軟體工程師"],
+    "Full Stack Engineer":       ["全端工程師","前端工程師","後端工程師"],
+    "QA Automation Engineer":    ["測試工程師","QA 工程師","自動化測試工程師"],
+    "DevOps Engineer":           ["DevOps 工程師","系統工程師","雲端工程師"],
+    "Product Manager":           ["產品經理","專案經理","AI 產品經理"],
+  };
+
+  const form   = document.querySelector("#predictionForm");
+  const tabs   = document.querySelectorAll(".view-tab[data-view]");
+  const panels = document.querySelectorAll("[data-panel]");
+  const currency = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
+
+  function money(v) { return currency.format(Math.round(Number(v))); }
+
+  function getPayload() {
+    const d = Object.fromEntries(new FormData(form).entries());
+    return {
+      model: d.model, target: d.target, job_title: d.job_title,
+      features: {
+        keyword: d.keyword, clean_location: d.clean_location,
+        experience_band: d.experience_band, jobRqDepartment: d.job_category,
+        jobCompanyIndustry: d.jobCompanyIndustry, employee_scale_cat: d.employee_scale_cat,
+      },
+    };
+  }
+
+  function estimateFallback(payload) {
+    const text = `${payload.features.keyword} ${payload.job_title}`.toLowerCase();
+    let base = 62000;
+    if (text.includes("ai") || text.includes("machine") || text.includes("data")) base += 12000;
+    if (text.includes("senior") || text.includes("lead")) base += 9000;
+    if (payload.job_title.includes("Backend")) base += 5000;
+    if (payload.job_title.includes("Frontend")) base += 3000;
+    const expFactor = { "經歷不拘~1年": 0.82, "1~3年": 1, "3~5年": 1.2, "5~7年": 1.38, "7年以上": 1.58 }[payload.features.experience_band] || 1;
+    const targetFactor = payload.target === "min" ? 0.88 : 1.12;
+    const modelFactor = { CatBoost: 1, LightGBM: 0.96, XGBoost: 0.91 }[payload.model] || 1;
+    const salary = Math.round(base * expFactor * targetFactor * modelFactor);
+    const mae = modelMae[payload.model]?.[payload.target] || 10000;
+    return { salary, mae, source: "frontend_demo" };
+  }
+
+  function renderCategoryOptions() {
+    const categories = categoryMap[document.querySelector("#titleInput").value] || ["軟體工程師","資料分析師"];
+    const wrap = document.querySelector("#categoryOptions");
+    wrap.innerHTML = "";
+    categories.forEach((cat, i) => {
+      const label = document.createElement("label");
+      label.className = "control";
+      label.style.cssText = "display:flex;align-items:center;gap:8px;height:auto;padding:6px 10px;";
+      label.innerHTML = `<input type="checkbox" value="${cat}" ${i < 2 ? "checked" : ""}> ${cat}`;
+      wrap.appendChild(label);
+    });
+    syncCategories();
+  }
+
+  function syncCategories() {
+    const checked = Array.from(document.querySelectorAll("#categoryOptions input:checked")).map(el => el.value);
+    document.querySelector("#categoryInput").value = checked.join(",");
+  }
+
+  function renderPredictionBars(salary, mae) {
+    const rows = [["保守估計", Math.max(0, salary - mae)], ["模型預測", salary], ["上緣估計", salary + mae]];
+    const max = Math.max(...rows.map(([, v]) => v));
+    document.querySelector("#predictionBars").innerHTML = rows.map(([label, value]) => `
+      <div class="bar-row">
+        <div class="bar-label">${label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, value / max * 100)}%"></div></div>
+        <div class="bar-value">${money(value)}</div>
+      </div>`).join("");
+  }
+
+  function renderFeatureList(payload) {
+    const rows = [
+      ["模型", payload.model], ["目標", payload.target === "max" ? "最高薪資" : "最低薪資"],
+      ["職務", payload.job_title], ["地區", payload.features.clean_location],
+      ["年資", payload.features.experience_band], ["職務類別", payload.features.jobRqDepartment],
+      ["產業", payload.features.jobCompanyIndustry], ["公司規模", `${payload.features.employee_scale_cat} 人`],
+    ];
+    document.querySelector("#featureList").innerHTML = rows.map(([k, v]) => `<li><strong>${k}</strong><span>${v}</span></li>`).join("");
+  }
+
+  function updatePrediction(result = null) {
+    syncCategories();
+    const payload = getPayload();
+    const fb = result || estimateFallback(payload);
+    document.querySelector("#selectedModel").textContent = payload.model;
+    document.querySelector("#salaryEstimate").textContent = money(fb.salary);
+    document.querySelector("#modelMae").textContent = money(fb.mae);
+    document.querySelector("#payloadBox").textContent = JSON.stringify(payload, null, 2);
+    document.querySelector("#predictionSource").textContent = result
+      ? `已串接 /predict API，來源：${result.source || "api"}`
+      : "目前使用前端展示估算；若 /predict API 有回應，會自動套用 API 結果。";
+    renderPredictionBars(fb.salary, fb.mae);
+    renderFeatureList(payload);
+  }
+
+  async function callApiPrediction() {
+    const payload = getPayload();
+    try {
+      const resp = await fetch("predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      const salary = data.estimated_monthly_salary || data.predicted_monthly_salary;
+      const mae = data.reference_mae || modelMae[payload.model]?.[payload.target] || 10000;
+      updatePrediction({ salary, mae, source: data.source || "api" });
+      document.querySelector("#apiStatus").textContent = "API 已連線";
+      document.querySelector("#predStatus").textContent = "API 結果";
+    } catch {
+      updatePrediction();
+      document.querySelector("#apiStatus").textContent = "前端估算";
+      document.querySelector("#predStatus").textContent = "前端估算";
+    }
+  }
+
+  function renderMetricsTable() {
+    document.querySelector("#metricsTable").innerHTML = trainingMetrics.map(item => `
+      <tr>
+        <td>${item.target === "max" ? "最高薪" : "最低薪"}</td>
+        <td><strong>${item.model}</strong></td>
+        <td>${money(item.mae)}</td>
+        <td>${money(item.rmse)}</td>
+        <td>${item.r2.toFixed(4)}</td>
+        <td>${item.mape.toFixed(2)}%</td>
+        <td>${item.within.toFixed(2)}%</td>
+      </tr>`).join("");
+  }
+
+  function renderRankingBars() {
+    const sorted = [...trainingMetrics].sort((a, b) => a.mae - b.mae);
+    const max = Math.max(...sorted.map(i => i.mae));
+    document.querySelector("#rankingBars").innerHTML = sorted.map(item => `
+      <div class="bar-row">
+        <div class="bar-label">${item.target === "max" ? "最高薪" : "最低薪"} · ${item.model}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, item.mae / max * 100)}%"></div></div>
+        <div class="bar-value">${money(item.mae)}</div>
+      </div>`).join("");
+  }
+
+  function renderSummaryCards() {
+    const bestMax = trainingMetrics.filter(i => i.target === "max").sort((a, b) => a.mae - b.mae)[0];
+    const bestMin = trainingMetrics.filter(i => i.target === "min").sort((a, b) => a.mae - b.mae)[0];
+    document.querySelector("#summaryCards").innerHTML = [bestMax, bestMin].map(item => `
+      <div class="model-card">
+        <div class="model-card-header">
+          <strong>${item.target === "max" ? "最高薪" : "最低薪"} · ${item.model}</strong>
+          <small>誤差≤25%：${item.within.toFixed(1)}%</small>
+        </div>
+        <div>MAE：${money(item.mae)}　R²：${item.r2.toFixed(4)}</div>
+      </div>`).join("");
+  }
+
+  tabs.forEach(btn => btn.addEventListener("click", () => {
+    const view = btn.dataset.view;
+    tabs.forEach(b => b.classList.toggle("active", b === btn));
+    panels.forEach(p => p.classList.toggle("active", p.dataset.panel === view));
+  }));
+
+  form.addEventListener("submit", e => { e.preventDefault(); callApiPrediction(); });
+  form.addEventListener("input", updatePrediction);
+  form.addEventListener("change", e => { if (e.target.id === "titleInput") renderCategoryOptions(); updatePrediction(); });
+  document.querySelector("#resetButton").addEventListener("click", () => { form.reset(); renderCategoryOptions(); updatePrediction(); });
+  document.querySelector("#copyPayload").addEventListener("click", async () => {
+    await navigator.clipboard.writeText(document.querySelector("#payloadBox").textContent);
+    document.querySelector("#apiNotice").textContent = "JSON 已複製。";
+  });
+  document.querySelector("#apiButton").addEventListener("click", async () => {
+    const notice = document.querySelector("#apiNotice");
+    try {
+      const resp = await fetch("health");
+      notice.textContent = resp.ok ? "API /health 有回應。" : "API /health 回應異常。";
+    } catch {
+      notice.textContent = "無法連線 API，請確認 salary_server.py 是否啟動。";
+    }
+  });
+
+  renderCategoryOptions();
+  renderMetricsTable();
+  renderRankingBars();
+  renderSummaryCards();
+  updatePrediction();
+</script>
+</body>
+</html>

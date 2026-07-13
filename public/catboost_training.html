@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>特徵變數模擬分析 — 薪資預測模型研究系統</title>
+  <style>
+    :root {
+      --accent: #1a56db;
+      --accent-dark: #1e40af;
+      --accent-light: #e8f0fe;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --navy: #1e293b;
+      --panel: #ffffff;
+      --warn: #b45309;
+      --warn-soft: #fff7ed;
+      --shadow: 0 1px 3px rgba(16,24,40,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif;
+      font-size: 14px;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    /* ── Navbar ── */
+    .navbar { background: var(--navy); padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+    .navbar-brand span { color: #93c5fd; }
+    .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+    .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+    .navbar-links a:hover, .navbar-links a.active { background: #334155; border-color: #334155; color: #f1f5f9; }
+
+    /* ── Page header ── */
+    .page-header { background: #fff; border-bottom: 1px solid var(--border); padding: 1.5rem clamp(1rem,4vw,2.5rem); }
+    .page-header h1 { font-size: 1.25rem; font-weight: 800; margin: 0 0 .25rem; color: var(--text); }
+    .page-header p { font-size: .85rem; color: var(--muted); margin: 0; }
+
+    /* ── Layout ── */
+    .layout {
+      min-height: calc(100vh - 120px);
+      display: grid;
+      grid-template-columns: 360px minmax(0,1fr) 360px;
+    }
+
+    .sidebar, .results { padding: 20px; background: var(--bg); }
+    .sidebar { border-right: 1px solid var(--border); }
+    .results { border-left: 1px solid var(--border); }
+    .main { padding: 20px; min-width: 0; }
+
+    /* ── Panel ── */
+    .panel, .metric, .feature-option {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel { padding: 18px; margin-bottom: 16px; }
+
+    .panel-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px; margin-bottom: 14px;
+    }
+
+    h1, h2 { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 800; }
+    h2 { font-size: 15px; color: var(--text); }
+
+    .pill {
+      min-height: 24px; padding: 3px 9px; border-radius: 999px;
+      color: var(--accent-dark); border: 1px solid #bfdbfe;
+      background: var(--accent-light); font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+
+    .badge-tag { display: inline-block; background: var(--accent); color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+
+    /* ── Form ── */
+    .field { margin-bottom: 14px; }
+    .field label, .check-title { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+
+    .control {
+      width: 100%; min-height: 38px; border: 1px solid var(--border);
+      border-radius: 6px; background: #fff; color: var(--text);
+      padding: 0 11px; outline: none;
+    }
+    textarea.control { min-height: 150px; padding: 10px 11px; resize: vertical; line-height: 1.5; }
+    .control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,86,219,.12); }
+
+    .grid-2, .metric-grid {
+      display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px;
+    }
+
+    /* ── Metric cards ── */
+    .metric { padding: 14px 16px; min-width: 0; }
+    .metric-label { color: var(--muted); font-size: 11px; font-weight: 700; margin-bottom: 6px; letter-spacing: .04em; text-transform: uppercase; }
+    .metric-value { color: var(--text); font-size: 20px; font-weight: 800; overflow-wrap: anywhere; line-height: 1.2; }
+    .metric-unit { font-size: 12px; font-weight: 600; color: var(--muted); margin-left: 2px; }
+    .metric-bar { margin-top: 7px; height: 4px; border-radius: 99px; background: var(--border); overflow: hidden; }
+    .metric-bar-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width .5s ease; }
+    .metric-value.good { color: #065f46; }
+    .metric-value.warn { color: var(--warn); }
+    .metric-value.neutral { color: var(--text); }
+
+    /* ── Buttons ── */
+    .feature-toolbar, .button-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .button-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin-top: 12px; }
+
+    .primary-button, .secondary-button {
+      min-height: 40px; border-radius: 6px; font-weight: 700; border: 1px solid transparent;
+    }
+    .primary-button { background: var(--accent); color: #fff; }
+    .primary-button:hover { background: var(--accent-dark); }
+    .secondary-button { background: #fff; color: var(--text); border-color: var(--border); }
+    .secondary-button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Feature grid ── */
+    .feature-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+    .feature-option { min-height: 40px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; box-shadow: none; color: var(--text); font-weight: 700; font-size: 13px; }
+    .feature-option input { width: 15px; height: 15px; accent-color: var(--accent); flex: 0 0 auto; }
+    .feature-option span { min-width: 0; overflow-wrap: anywhere; }
+
+    /* ── Code box ── */
+    .code-box {
+      min-height: 280px; max-height: 520px; overflow: auto; margin: 0; padding: 14px;
+      border: 1px solid var(--border); border-radius: 6px; background: #f8fafc;
+      color: var(--text); white-space: pre-wrap; word-break: break-word;
+      font-size: 12px; line-height: 1.55; font-family: "Consolas","Courier New",monospace;
+    }
+
+    /* ── Notice ── */
+    .notice {
+      padding: 12px; border: 1px solid #fed7aa; border-radius: 6px;
+      background: var(--warn-soft); color: var(--warn);
+      line-height: 1.55; font-size: 13px; font-weight: 700;
+    }
+
+    /* ── Chart ── */
+    .chart-frame { width: 100%; border: 1px solid var(--border); border-radius: 6px; background: #fff; overflow: hidden; }
+    .chart-frame img { display: block; width: 100%; height: auto; }
+    .chart-empty { min-height: 200px; display: grid; place-items: center; color: var(--muted); font-weight: 700; text-align: center; padding: 18px; font-size: .9rem; }
+    .chart-link { display: inline-flex; margin-top: 10px; color: var(--accent); font-weight: 700; text-decoration: none; font-size: .85rem; }
+    .chart-link:hover { color: var(--accent-dark); }
+
+    /* ── Tags ── */
+    .selected-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .tag { padding: 4px 9px; border-radius: 999px; background: var(--accent-light); border: 1px solid #bfdbfe; color: var(--accent-dark); font-size: 12px; font-weight: 700; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 340px minmax(0,1fr); }
+      .results { grid-column: 1/-1; border-left: 0; border-top: 1px solid var(--border); }
+    }
+    @media (max-width: 760px) {
+      .navbar { flex-direction: column; align-items: flex-start; padding: .75rem 1rem; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar, .main, .results { padding: 16px; border: 0; }
+      .grid-2, .metric-grid, .feature-grid, .button-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+  <nav class="navbar-links">
+    <a href="/report.html">研究報告</a>
+    <a href="/data_cleaning.html">資料清洗流程</a>
+    <a href="/catboost_training.html" class="active">特徵變數模擬分析</a>
+    <a href="/salary_dashboard.html">三模型工作台</a>
+    <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+    <a href="/predict.html">薪資預測</a>
+    <a href="/salary-url.html">104 面議預測</a>
+    <a href="/faq.html">專案問答</a>
+  </nav>
+</header>
+
+<div class="page-header">
+  <h1>特徵變數模擬分析 <span class="badge-tag">CatBoost</span></h1>
+  <p>選擇 X 特徵欄位、調整超參數，產生訓練設定並觀察模型評估指標</p>
+</div>
+
+<main class="layout">
+  <aside class="sidebar">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>資料與目標</h2>
+        <span class="pill" id="featureCount">0 X</span>
+      </div>
+
+      <div class="field">
+        <label for="targetSelect">Target</label>
+        <select class="control" id="targetSelect">
+          <option value="max" selected>max salary</option>
+          <option value="min">min salary</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="dataPath">Clean data CSV</label>
+        <input class="control" id="dataPath" value="data/clean data/104_salary_clean_features_max.csv" />
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="testSize">Test size</label>
+          <input class="control" id="testSize" type="number" min="0.05" max="0.5" step="0.05" value="0.2" />
+        </div>
+        <div class="field">
+          <label for="randomState">Random state</label>
+          <input class="control" id="randomState" type="number" min="0" step="1" value="42" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>CatBoost 超參數</h2>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="depth">Depth</label>
+          <input class="control" id="depth" type="number" min="1" max="16" step="1" value="6" />
+        </div>
+        <div class="field">
+          <label for="learningRate">Learning rate</label>
+          <input class="control" id="learningRate" type="number" min="0.001" max="1" step="0.001" value="0.1" />
+        </div>
+        <div class="field">
+          <label for="iterations">Iterations</label>
+          <input class="control" id="iterations" type="number" min="1" step="1" value="120" />
+        </div>
+        <div class="field">
+          <label for="cvFolds">CV folds</label>
+          <input class="control" id="cvFolds" type="number" min="2" max="10" step="1" value="3" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>訓練端</h2>
+        <span class="pill" id="endpointStatus">未設定</span>
+      </div>
+      <div class="field">
+        <label for="endpointUrl">訓練端點</label>
+        <input class="control" id="endpointUrl" value="/run-main" />
+      </div>
+      <div class="button-row">
+        <button class="primary-button" id="trainButton" type="button">訓練模型</button>
+        <button class="secondary-button" id="copyButton" type="button">複製設定</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="main">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>選擇 CatBoost 的 X 特徵</h2>
+        <div class="feature-toolbar">
+          <button class="secondary-button" id="selectDefault" type="button">預設欄位</button>
+          <button class="secondary-button" id="selectAll" type="button">全選</button>
+          <button class="secondary-button" id="clearAll" type="button">清除</button>
+        </div>
+      </div>
+      <div class="feature-grid" id="featureGrid"></div>
+      <div class="selected-list" id="selectedList"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>訓練設定 JSON</h2>
+      </div>
+      <pre class="code-box" id="configBox"></pre>
+    </section>
+  </section>
+
+  <aside class="results">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>訓練結果</h2>
+        <span class="pill" id="runStatus">Ready</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-label">平均絕對誤差 MAE</div>
+          <div class="metric-value neutral" id="maeValue">-<span class="metric-unit" id="maeUnit"></span></div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="maeBar" style="width:0%;background:#6b7280;"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">均方根誤差 RMSE</div>
+          <div class="metric-value neutral" id="rmseValue">-<span class="metric-unit" id="rmseUnit"></span></div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="rmseBar" style="width:0%;background:#6b7280;"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">決定係數 R²</div>
+          <div class="metric-value good" id="r2Value">-</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="r2Bar" style="width:0%;"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">平均絕對百分比誤差 MAPE</div>
+          <div class="metric-value" id="mapeValue">-</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="mapeBar" style="width:0%;background:#f59e0b;"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">誤差 ≤ 25% 比例</div>
+          <div class="metric-value warn" id="errorValue">-</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="errorBar" style="width:0%;background:#10b981;"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">CV MAE (log scale)</div>
+          <div class="metric-value neutral" id="cvValue">-</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="cvBar" style="width:0%;background:#8b5cf6;"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>實際薪資 vs 預測薪資</h2>
+      </div>
+      <div class="chart-frame">
+        <div class="chart-empty" id="chartEmpty">訓練完成後會顯示 Actual vs Predicted 圖表</div>
+        <img id="predictionChart" alt="Actual vs Predicted Monthly Salary" hidden />
+      </div>
+      <a class="chart-link" id="chartLink" href="#" target="_blank" rel="noopener" hidden>開啟完整圖表 →</a>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>模型說明文件</h2>
+      </div>
+      <button class="primary-button" id="generateDoc" type="button" style="width:100%;">📄 產生說明文件</button>
+    </section>
+
+    <section class="notice" id="noticeBox">
+      請用 salary_server.py 開啟本頁，按「訓練模型」會執行 main.py。
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>貼上結果 JSON</h2>
+      </div>
+      <textarea class="control" id="resultInput" spellcheck="false" placeholder='{"metrics":{"mae":0,"rmse":0,"r2":0,"mape":0,"error":0}}'></textarea>
+      <div class="button-row">
+        <button class="secondary-button" id="renderResult" type="button">更新結果</button>
+        <button class="secondary-button" id="resetResult" type="button">清空結果</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<script>
+    const allFeatures = [
+      "keyword","clean_location","jobCompanyName","jobCompanyIndustry",
+      "employee_scale_cat","experience_band","jobRqDepartment","job_cluster_label",
+      "experience_band_cluster","is_tech_job","announce_date_cat","searchTime",
+      "maxPage","jobLocationAt","area","jobAnnounceDate","jobTitles","jobCompanyUrl",
+      "employeeCount","jobContent","jobCategory","jobSalaryType","jobAddress",
+      "jobRqYear","jobRqEducation","jobDetailUrl","workExp","edu","specialty",
+      "skill","language","manageResp","remoteWork","certificate","other","welfare",
+      "clean_category","clean_title","job_text_features"
+    ];
+
+    const defaultFeatures = [
+      "keyword","clean_location","jobCompanyName","jobCompanyIndustry",
+      "employee_scale_cat","experience_band","jobRqDepartment","job_cluster_label",
+      "experience_band_cluster","is_tech_job","announce_date_cat"
+    ];
+
+    const els = {
+      featureGrid: document.querySelector("#featureGrid"),
+      selectedList: document.querySelector("#selectedList"),
+      featureCount: document.querySelector("#featureCount"),
+      configBox: document.querySelector("#configBox"),
+      targetSelect: document.querySelector("#targetSelect"),
+      dataPath: document.querySelector("#dataPath"),
+      testSize: document.querySelector("#testSize"),
+      randomState: document.querySelector("#randomState"),
+      depth: document.querySelector("#depth"),
+      learningRate: document.querySelector("#learningRate"),
+      iterations: document.querySelector("#iterations"),
+      cvFolds: document.querySelector("#cvFolds"),
+      endpointUrl: document.querySelector("#endpointUrl"),
+      endpointStatus: document.querySelector("#endpointStatus"),
+      runStatus: document.querySelector("#runStatus"),
+      noticeBox: document.querySelector("#noticeBox"),
+      resultInput: document.querySelector("#resultInput"),
+      maeValue: document.querySelector("#maeValue"),
+      rmseValue: document.querySelector("#rmseValue"),
+      r2Value: document.querySelector("#r2Value"),
+      mapeValue: document.querySelector("#mapeValue"),
+      errorValue: document.querySelector("#errorValue"),
+      cvValue: document.querySelector("#cvValue"),
+      chartEmpty: document.querySelector("#chartEmpty"),
+      predictionChart: document.querySelector("#predictionChart"),
+      chartLink: document.querySelector("#chartLink")
+    };
+
+    function numberValue(element) { return Number(element.value); }
+
+    function selectedFeatures() {
+      return Array.from(document.querySelectorAll(".feature-checkbox:checked")).map(input => input.value);
+    }
+
+    function buildPayload() {
+      const target = els.targetSelect.value;
+      return {
+        model: "CatBoost", target,
+        data_path: els.dataPath.value,
+        x_features: selectedFeatures(),
+        y_column: "target_log1p",
+        split: { test_size: numberValue(els.testSize), random_state: numberValue(els.randomState) },
+        catboost_params: {
+          depth: numberValue(els.depth),
+          learning_rate: numberValue(els.learningRate),
+          iterations: numberValue(els.iterations),
+          loss_function: "MAE", thread_count: 1,
+          allow_writing_files: false, verbose: 0
+        },
+        cv_folds: numberValue(els.cvFolds),
+        output_metrics: ["MAE","RMSE","R2","MAPE","Error"]
+      };
+    }
+
+    function updateConfig() {
+      const selected = selectedFeatures();
+      els.featureCount.textContent = `${selected.length} X`;
+      els.selectedList.innerHTML = selected.map(name => `<span class="tag">${name}</span>`).join("");
+      els.configBox.textContent = JSON.stringify(buildPayload(), null, 2);
+      els.endpointStatus.textContent = els.endpointUrl.value.trim() ? "可執行" : "未設定";
+    }
+
+    function renderFeatureGrid() {
+      els.featureGrid.innerHTML = allFeatures.map(feature => `
+        <label class="feature-option">
+          <input class="feature-checkbox" type="checkbox" value="${feature}" ${defaultFeatures.includes(feature) ? "checked" : ""} />
+          <span>${feature}</span>
+        </label>
+      `).join("");
+      updateConfig();
+    }
+
+    function setFeatures(features) {
+      document.querySelectorAll(".feature-checkbox").forEach(input => {
+        input.checked = features.includes(input.value);
+      });
+      updateConfig();
+    }
+
+    function setBar(barId, pct, cap = 100) {
+      const bar = document.getElementById(barId);
+      if (bar) bar.style.width = Math.min(100, Math.max(0, (pct / cap) * 100)) + "%";
+    }
+
+    function renderMetrics(result) {
+      const metrics = result.metrics || result;
+      const mae   = metrics.mae   ?? metrics.test_mae;
+      const rmse  = metrics.rmse  ?? metrics.test_rmse;
+      const r2    = metrics.r2    ?? metrics.test_r2;
+      const mape  = metrics.mape  ?? metrics.test_mape;
+      const error = metrics.error ?? metrics.mean_error ?? metrics.error_within_threshold_percent ?? metrics.within_25_percent;
+      const cvLog = result.cv_mae_log;
+
+      const maeEl = document.getElementById("maeValue");
+      if (mae == null || isNaN(mae)) {
+        maeEl.childNodes[0].textContent = "-";
+        document.getElementById("maeUnit").textContent = "";
+        setBar("maeBar", 0);
+      } else {
+        maeEl.childNodes[0].textContent = Math.round(mae).toLocaleString("zh-TW");
+        document.getElementById("maeUnit").textContent = " 元";
+        setBar("maeBar", mae, 30000);
+      }
+
+      const rmseEl = document.getElementById("rmseValue");
+      if (rmse == null || isNaN(rmse)) {
+        rmseEl.childNodes[0].textContent = "-";
+        document.getElementById("rmseUnit").textContent = "";
+        setBar("rmseBar", 0);
+      } else {
+        rmseEl.childNodes[0].textContent = Math.round(rmse).toLocaleString("zh-TW");
+        document.getElementById("rmseUnit").textContent = " 元";
+        setBar("rmseBar", rmse, 50000);
+      }
+
+      if (r2 == null || isNaN(r2)) { els.r2Value.textContent = "-"; setBar("r2Bar", 0); }
+      else { els.r2Value.textContent = Number(r2).toFixed(4); setBar("r2Bar", Math.max(0, r2), 1); }
+
+      if (mape == null || isNaN(mape)) { els.mapeValue.textContent = "-"; setBar("mapeBar", 0); }
+      else { els.mapeValue.textContent = `${Number(mape).toFixed(2)}%`; setBar("mapeBar", mape, 50); }
+
+      if (error == null || isNaN(error)) { els.errorValue.textContent = "-"; setBar("errorBar", 0); }
+      else { els.errorValue.textContent = `${Number(error).toFixed(2)}%`; setBar("errorBar", error, 100); }
+
+      if (cvLog == null || isNaN(cvLog)) { els.cvValue.textContent = "-"; setBar("cvBar", 0); }
+      else { els.cvValue.textContent = Number(cvLog).toFixed(4); setBar("cvBar", cvLog, 0.5); }
+    }
+
+    function renderPredictionChart(target, hasResult) {
+      if (!hasResult) {
+        els.predictionChart.hidden = true;
+        els.predictionChart.removeAttribute("src");
+        els.chartLink.hidden = true;
+        els.chartLink.removeAttribute("href");
+        els.chartEmpty.hidden = false;
+        return;
+      }
+      const imagePath = `/outputs/visualizations/catboost_${target}_prediction_comparison.png`;
+      const imageUrl = `${imagePath}?t=${Date.now()}`;
+      els.predictionChart.src = imageUrl;
+      els.chartLink.href = imagePath;
+      els.predictionChart.hidden = false;
+      els.chartLink.hidden = false;
+      els.chartEmpty.hidden = true;
+    }
+
+    function renderStatus(data) {
+      const target = els.targetSelect.value;
+      const rows = data.summary || [];
+      const row = rows.find(item => item.target === target && item.model === "CatBoost") || rows[0];
+      if (row) renderMetrics(row);
+      renderPredictionChart(row?.target || target, Boolean(row) && !data.running);
+      els.resultInput.value = JSON.stringify(data, null, 2);
+      els.runStatus.textContent = data.running ? "Training" : (data.return_code === 0 ? "Done" : "Ready");
+      els.noticeBox.textContent = data.message || "Ready";
+    }
+
+    async function pollTrainingStatus() {
+      if (location.protocol === "file:") return;
+      const response = await fetch("/train-status");
+      const data = await response.json();
+      renderStatus(data);
+      if (data.running) window.setTimeout(pollTrainingStatus, 3000);
+    }
+
+    async function trainModel() {
+      if (location.protocol === "file:") {
+        els.runStatus.textContent = "Error";
+        els.noticeBox.textContent = "請不要直接打開 HTML 檔。請先執行 salary_server.py，再用 http://127.0.0.1:5001/catboost_training.html 開啟。";
+        return;
+      }
+      const endpoint = els.endpointUrl.value.trim() || "/run-main";
+      const payload = buildPayload();
+      if (!payload.x_features.length) { els.noticeBox.textContent = "請至少選擇一個 X 欄位。"; return; }
+      els.runStatus.textContent = "Training";
+      els.noticeBox.textContent = "訓練中...";
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+        renderStatus(data);
+        pollTrainingStatus();
+      } catch (error) {
+        els.runStatus.textContent = "Error";
+        els.noticeBox.textContent = `${error.message}。請確認 salary_server.py 正在執行。`;
+      }
+    }
+
+    document.querySelector("#generateDoc").addEventListener("click", () => {
+      const payload = buildPayload();
+      const p = payload.catboost_params;
+      const features = payload.x_features;
+      const target = payload.target === "max" ? "最高薪資 (max salary)" : "最低薪資 (min salary)";
+      const getMetric = (id) => document.getElementById(id)?.textContent?.trim() || "-";
+      const featureRows = features.map((f, i) => `<tr><td>${i+1}</td><td>${f}</td></tr>`).join("");
+      const now = new Date().toLocaleString("zh-TW", { hour12: false });
+
+      const html = `<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"/>
+<title>CatBoost 模型說明文件</title>
+<style>
+  body { margin: 40px; font-family: "Microsoft JhengHei",Arial,sans-serif; font-size:14px; color:#1e293b; }
+  h1 { font-size:22px; border-bottom:3px solid #1a56db; padding-bottom:8px; margin-bottom:4px; }
+  .meta { color:#64748b; font-size:12px; margin-bottom:28px; }
+  h2 { font-size:15px; color:#1a56db; margin:28px 0 10px; border-left:4px solid #1a56db; padding-left:10px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+  th { background:#e8f0fe; color:#1e40af; text-align:left; padding:9px 12px; border:1px solid #bfdbfe; font-size:13px; }
+  td { padding:8px 12px; border:1px solid #e2e8f0; font-size:13px; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  .badge { display:inline-block; background:#1a56db; color:#fff; border-radius:4px; padding:2px 10px; font-size:12px; font-weight:bold; margin-left:8px; }
+  .footer { margin-top:40px; font-size:11px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:10px; }
+  @media print { button { display:none; } }
+</style></head><body>
+<button onclick="window.print()" style="float:right;padding:8px 18px;background:#1a56db;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">列印 / 另存 PDF</button>
+<h1>CatBoost 模型參數說明文件 <span class="badge">CatBoost</span></h1>
+<div class="meta">產生時間：${now} ／ 預測目標：${target}</div>
+<h2>模型超參數</h2>
+<table>
+  <tr><th>參數名稱</th><th>設定值</th><th>說明</th></tr>
+  <tr><td>depth</td><td>${p.depth}</td><td>決策樹深度，控制模型複雜度</td></tr>
+  <tr><td>learning_rate</td><td>${p.learning_rate}</td><td>學習率，每棵樹對最終結果的影響程度</td></tr>
+  <tr><td>iterations</td><td>${p.iterations}</td><td>訓練迭代次數（樹的棵數）</td></tr>
+  <tr><td>loss_function</td><td>${p.loss_function}</td><td>損失函數，MAE 對離群值較不敏感</td></tr>
+  <tr><td>thread_count</td><td>${p.thread_count}</td><td>CPU 執行緒數</td></tr>
+</table>
+<h2>資料分割設定</h2>
+<table>
+  <tr><th>參數</th><th>值</th></tr>
+  <tr><td>測試集比例 (test_size)</td><td>${payload.split.test_size}</td></tr>
+  <tr><td>隨機種子 (random_state)</td><td>${payload.split.random_state}</td></tr>
+  <tr><td>交叉驗證折數 (CV folds)</td><td>${payload.cv_folds}</td></tr>
+  <tr><td>目標欄位 (y_column)</td><td>${payload.y_column}</td></tr>
+  <tr><td>資料來源</td><td>${payload.data_path}</td></tr>
+</table>
+<h2>X 因子清單（共 ${features.length} 個）</h2>
+<table><tr><th>#</th><th>欄位名稱</th></tr>${featureRows}</table>
+<h2>模型評估指標</h2>
+<table>
+  <tr><th>指標</th><th>數值</th><th>說明</th></tr>
+  <tr><td>MAE（平均絕對誤差）</td><td>${getMetric("maeValue")}</td><td>預測值與實際值的平均差距</td></tr>
+  <tr><td>RMSE（均方根誤差）</td><td>${getMetric("rmseValue")}</td><td>對大誤差更敏感的誤差指標</td></tr>
+  <tr><td>R²（決定係數）</td><td>${getMetric("r2Value")}</td><td>模型解釋變異的比例，越接近 1 越好</td></tr>
+  <tr><td>MAPE（平均絕對百分比誤差）</td><td>${getMetric("mapeValue")}</td><td>相對誤差百分比</td></tr>
+  <tr><td>誤差 ≤ 25% 比例</td><td>${getMetric("errorValue")}</td><td>預測誤差在 25% 以內的樣本比例</td></tr>
+  <tr><td>CV MAE（log scale）</td><td>${getMetric("cvValue")}</td><td>交叉驗證平均絕對誤差（對數尺度）</td></tr>
+</table>
+<div class="footer">本文件由特徵變數模擬分析頁面自動產生 ／ ${now}</div>
+</body></html>`;
+
+      const win = window.open("", "_blank");
+      win.document.write(html);
+      win.document.close();
+    });
+
+    document.querySelector("#selectDefault").addEventListener("click", () => setFeatures(defaultFeatures));
+    document.querySelector("#selectAll").addEventListener("click", () => setFeatures(allFeatures));
+    document.querySelector("#clearAll").addEventListener("click", () => setFeatures([]));
+    document.querySelector("#copyButton").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(els.configBox.textContent);
+      els.noticeBox.textContent = "訓練設定已複製。";
+    });
+    document.querySelector("#trainButton").addEventListener("click", trainModel);
+    document.querySelector("#renderResult").addEventListener("click", () => {
+      try {
+        const parsed = JSON.parse(els.resultInput.value || "{}");
+        if (Array.isArray(parsed.summary)) {
+          renderStatus(parsed);
+        } else {
+          renderMetrics(parsed);
+          renderPredictionChart(els.targetSelect.value, true);
+        }
+        els.runStatus.textContent = "Loaded";
+        els.noticeBox.textContent = "訓練結果已更新。";
+      } catch {
+        els.noticeBox.textContent = "結果 JSON 格式不正確。";
+      }
+    });
+    document.querySelector("#resetResult").addEventListener("click", () => {
+      els.resultInput.value = "";
+      renderMetrics({});
+      renderPredictionChart(els.targetSelect.value, false);
+      els.runStatus.textContent = "Ready";
+      els.noticeBox.textContent = "結果已清空。";
+    });
+    document.querySelector("#targetSelect").addEventListener("change", () => {
+      els.dataPath.value = `data/clean data/104_salary_clean_features_${els.targetSelect.value}.csv`;
+      updateConfig();
+      pollTrainingStatus().catch(() => {});
+    });
+    document.addEventListener("input", event => {
+      if (event.target.matches("input, select")) updateConfig();
+    });
+    document.addEventListener("change", event => {
+      if (event.target.matches(".feature-checkbox")) updateConfig();
+    });
+
+    renderFeatureGrid();
+    if (location.protocol === "file:") {
+      els.endpointStatus.textContent = "未連線";
+      els.noticeBox.textContent = "目前是直接開 HTML 檔，按訓練會 Failed to fetch。請先執行 salary_server.py，再用 http://127.0.0.1:5001/catboost_training.html 開啟。";
+    } else {
+      pollTrainingStatus().catch(() => {});
+    }
+</script>
+</body>
+</html>

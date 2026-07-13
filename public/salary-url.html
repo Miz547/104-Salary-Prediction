@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>104 面議薪資預測</title>
+    <style>
+        :root {
+            --accent: #1a56db;
+            --accent-strong: #1e40af;
+            --navy: #1e293b;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --muted: #64748b;
+        }
+        body { margin: 0; font-family: "Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; background: var(--bg); color: var(--navy); font-size: 14px; }
+
+        /* Navbar */
+        .navbar { background: var(--navy); padding: 0 clamp(1rem,4vw,2.5rem); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+        .navbar-brand { color: #f1f5f9; font-size: 1rem; font-weight: 700; text-decoration: none; padding: 1rem 0; white-space: nowrap; }
+        .navbar-brand span { color: #93c5fd; }
+        .navbar-links { display: flex; flex-wrap: wrap; gap: .2rem; }
+        .navbar-links a { color: #94a3b8; border: 1px solid transparent; border-radius: 5px; font-size: .85rem; font-weight: 600; padding: .5rem .8rem; text-decoration: none; transition: .15s; }
+        .navbar-links a:hover { background: #334155; border-color: #334155; color: #f1f5f9; }
+
+        /* Layout */
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; align-items: start; }
+
+        /* Cards */
+        .card { background: #fff; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
+        .card-title { margin: 0 0 18px; padding-left: 10px; border-left: 4px solid var(--accent); font-size: 18px; font-weight: 800; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; color: #555; font-size: 14px; }
+        textarea { width: 100%; min-height: 96px; resize: vertical; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; line-height: 1.5; box-sizing: border-box; }
+        textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        select { width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; box-sizing: border-box; background: #fff; }
+        .field { margin-top: 16px; }
+        .btn { width: 100%; margin-top: 14px; padding: 12px; background: var(--accent); color: #fff; border: 0; border-radius: 4px; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .btn:hover { background: var(--accent-strong); }
+        .btn:disabled { opacity: 0.72; cursor: wait; }
+        .hint { color: var(--muted); line-height: 1.7; font-size: 13px; }
+        .empty { color: var(--muted); line-height: 1.7; font-size: 13px; }
+        .error { display: none; background: #FFF1F0; border: 1px solid #FDA29B; color: #B42318; padding: 14px; border-radius: 4px; margin-top: 14px; font-size: 14px; line-height: 1.6; }
+        .result { display: none; }
+        .range-list { display: grid; gap: 12px; margin-bottom: 18px; }
+        .range-row { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 4px; padding: 14px; }
+        .range-model { font-size: 13px; color: #555; font-weight: 800; }
+        .range-value { color: var(--accent); font-size: 26px; font-weight: 900; margin-top: 6px; }
+        .target-preview { margin-top: 10px; padding: 10px; border: 1px solid var(--border); background: var(--bg); border-radius: 4px; font-size: 13px; color: #555; line-height: 1.5; }
+        .grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px 14px; font-size: 14px; line-height: 1.5; }
+        .key { color: var(--muted); font-weight: 700; }
+        .value { word-break: break-word; }
+        .model-box { margin-top: 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+        pre { margin: 12px 0 0; padding: 14px; background: #20242B; color: #F8FAFC; border-radius: 4px; overflow: auto; font-size: 12px; line-height: 1.5; }
+
+        @media (max-width: 700px) {
+            .navbar { flex-direction: column; align-items: flex-start; padding: .75rem 1rem; }
+            .container { grid-template-columns: 1fr; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="navbar-brand" href="/"><span>AI</span> 薪資預測模型研究系統</a>
+    <nav class="navbar-links">
+        <a href="/report.html">研究報告</a>
+        <a href="/data_cleaning.html">資料清洗流程</a>
+        <a href="/catboost_training.html">特徵變數模擬分析</a>
+        <a href="/validation/salary_validation_admin_dashboard.html">模型驗證</a>
+        <a href="/predict.html">薪資預測</a>
+        <a href="/salary-url.html" class="active">104 面議預測</a>
+        <a href="/faq.html">專案問答</a>
+    </nav>
+</header>
+
+<div class="container">
+    <!-- 左欄：表單 -->
+    <div class="card">
+        <div class="card-title">貼上 104 職缺網址</div>
+        <label for="jobUrl">104 job URL</label>
+        <textarea id="jobUrl" placeholder="https://www.104.com.tw/job/7e88o?jobsource=joblist_search"></textarea>
+
+        <div class="field">
+            <label for="modelName">預測模型</label>
+            <select id="modelName">
+                <option value="CatBoost" selected>CatBoost</option>
+                <option value="LightGBM">LightGBM</option>
+                <option value="XGBoost">XGBoost</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="targetMode">預測目標</label>
+            <select id="targetMode">
+                <option value="range">薪資區間：min + max</option>
+                <option value="min">min：偏保守估計</option>
+                <option value="max">max：偏上緣估計</option>
+            </select>
+            <div id="targetPreview" class="target-preview"></div>
+        </div>
+
+        <button class="btn" id="predictBtn" onclick="predictFromUrl()">預測薪資區間</button>
+        <p class="hint">會先抓取職缺資料，再呼叫預測 API。面議職缺只能估算合理區間，不代表公司實際核薪。</p>
+        <div id="errorBox" class="error"></div>
+    </div>
+
+    <!-- 右欄：結果 -->
+    <div class="card">
+        <div class="card-title">預測結果</div>
+        <div id="emptyState" class="empty">貼上網址後，這裡會列出各模型的薪資結果、解析出的職缺資料與模型來源。</div>
+
+        <div id="resultBox" class="result">
+            <div id="ranges" class="range-list"></div>
+            <div id="jobInfo" class="grid"></div>
+            <div id="payloadInfo" class="model-box"></div>
+            <div id="modelInfo" class="model-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showError(message) {
+        const box = document.getElementById('errorBox');
+        box.style.display = 'block';
+        box.textContent = message;
+    }
+
+    function clearError() {
+        const box = document.getElementById('errorBox');
+        box.style.display = 'none';
+        box.textContent = '';
+    }
+
+    function renderGrid(element, rows) {
+        element.innerHTML = '';
+        rows.forEach(([key, value]) => {
+            const k = document.createElement('div');
+            k.className = 'key';
+            k.textContent = key;
+            const v = document.createElement('div');
+            v.className = 'value';
+            v.textContent = value || '-';
+            element.append(k, v);
+        });
+    }
+
+    function getTargetLabel(target) {
+        if (target === 'min') return 'min：偏保守估計';
+        if (target === 'max') return 'max：偏上緣估計';
+        return '薪資區間：min + max';
+    }
+
+    function syncTargetMode() {
+        const model = document.getElementById('modelName').value;
+        const target = document.getElementById('targetMode').value;
+        document.getElementById('targetPreview').textContent = '目前選擇：' + model + ' / ' + getTargetLabel(target);
+        document.getElementById('predictBtn').textContent = target === 'range' ? '預測薪資區間' : '預測 ' + target + ' 薪資';
+    }
+
+    function formatMoney(value) {
+        return 'NT$ ' + Math.round(Number(value || 0)).toLocaleString();
+    }
+
+    function getDisplayText(item, target) {
+        if (target === 'min' && item.min_prediction) {
+            return formatMoney(item.min_prediction.estimated_monthly_salary);
+        }
+        if (target === 'max' && item.max_prediction) {
+            return formatMoney(item.max_prediction.estimated_monthly_salary);
+        }
+        return item.range.text;
+    }
+
+    async function predictFromUrl() {
+        clearError();
+        const url = document.getElementById('jobUrl').value.trim();
+        const model = document.getElementById('modelName').value;
+        const target = document.getElementById('targetMode').value;
+        if (!url) { showError('請先貼上 104 職缺網址。'); return; }
+
+        const btn = document.getElementById('predictBtn');
+        btn.disabled = true;
+        btn.textContent = '抓取職缺並使用 ' + model + ' 預測 ' + getTargetLabel(target) + '...';
+
+        try {
+            const resp = await fetch('/predict-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, model, target })
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.error || 'predict-url HTTP ' + resp.status);
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('resultBox').style.display = 'block';
+
+            const ranges = document.getElementById('ranges');
+            ranges.innerHTML = '';
+            const selectedTarget = data.target || target;
+            const visiblePredictions = (data.predictions || []).filter(item => item.model === model);
+            if (!visiblePredictions.length) throw new Error('後端沒有回傳 ' + model + ' 的預測結果');
+
+            const heading = document.createElement('div');
+            heading.className = 'target-preview';
+            heading.textContent = '本次預測：' + model + ' / ' + getTargetLabel(selectedTarget);
+            ranges.appendChild(heading);
+
+            visiblePredictions.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'range-row';
+                row.innerHTML = `<div class="range-model">${item.model} | ${getTargetLabel(selectedTarget)}</div>
+                                 <div class="range-value">${getDisplayText(item, selectedTarget)}</div>`;
+                ranges.appendChild(row);
+            });
+
+            renderGrid(document.getElementById('jobInfo'), [
+                ['資料來源', data.source],
+                ['職稱', data.job.jobTitles],
+                ['公司', data.job.jobCompanyName],
+                ['地點', data.job.jobLocationAt],
+                ['職務類別', data.job.jobCategory],
+                ['年資條件', data.job.jobRqYear],
+                ['產業', data.job.jobCompanyIndustry],
+                ['員工數', data.job.employeeCount]
+            ]);
+
+            const payloadInfo = document.getElementById('payloadInfo');
+            payloadInfo.innerHTML = '<div class="card-title">送往 /predict 的 JSON</div>';
+            visiblePredictions.forEach(item => {
+                const payloads = item.payloads || {};
+                const payload = selectedTarget === 'range' ? payloads : payloads[selectedTarget];
+                const block = document.createElement('pre');
+                block.textContent = JSON.stringify(selectedTarget === 'range' ? { model: item.model, payloads } : payload, null, 2);
+                payloadInfo.appendChild(block);
+            });
+
+            renderGrid(document.getElementById('modelInfo'), [
+                ['模型來源', data.model_info.source],
+                ['模型列表', data.model_info.models.join(', ')],
+                ['預測目標', data.model_info.targets.join(', ')],
+                ['備註', data.model_info.note]
+            ]);
+        } catch (error) {
+            showError(error.message + '；請確認目前頁面網址是透過伺服器開啟，而不是直接開啟本機檔案。');
+        } finally {
+            btn.disabled = false;
+            syncTargetMode();
+        }
+    }
+
+    document.getElementById('targetMode').addEventListener('change', syncTargetMode);
+    document.getElementById('modelName').addEventListener('change', syncTargetMode);
+    syncTargetMode();
+</script>
+</body>
+</html>
